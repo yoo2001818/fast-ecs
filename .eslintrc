@@ -3,6 +3,9 @@
   "env": {
     "es6": true
   },
+  "rules": {
+    "class-methods-use-this": "off"
+  },
   "overrides": [
     {
       "files": ["**/*.test.ts", "**/*.test.ts"],
