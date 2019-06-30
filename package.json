@@ -1,0 +1,41 @@
+{
+  "name": "fast-ecs",
+  "version": "0.1.0",
+  "description": "A performance-oriented entity-component-system framework",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run jest && npm run eslint",
+    "jest": "jest --coverage --verbose",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "eslint": "eslint src --ext .ts --ext .js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yoo2001818/fast-ecs.git"
+  },
+  "author": "Duknam Yoo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yoo2001818/fast-ecs/issues"
+  },
+  "files": [
+    "lib/"
+  ],
+  "homepage": "https://github.com/yoo2001818/fast-ecs#readme",
+  "devDependencies": {
+    "@types/jest": "^24.0.15",
+    "@types/node": "^12.0.10",
+    "@typescript-eslint/eslint-plugin": "^1.11.0",
+    "@typescript-eslint/parser": "^1.11.0",
+    "eslint": "^5.0.0",
+    "eslint-config-airbnb-typescript": "^4.0.0",
+    "eslint-plugin-import": "^2.18.0",
+    "eslint-plugin-jest": "^22.7.1",
+    "jest": "^24.8.0",
+    "ts-jest": "^24.0.2",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.2"
+  },
+  "dependencies": {}
+}
