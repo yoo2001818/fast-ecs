@@ -89,3 +89,11 @@ engine.addComponentWithPool('position', class Position {
 });
 // While this does not (Should this be supported anyway?)
 engine.addComponent('velocity', (x, y) => ({ x, y }));
+
+engine.addEntity()
+  .addComponent('position', 0, 0);
+
+// Or...
+const entity = engine.addEntity();
+const positions = engine.state.getComponent('position');
+positions.add(entity, 0, 0);
