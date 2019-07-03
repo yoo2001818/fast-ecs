@@ -1,29 +1,22 @@
 import { Component, System } from './type';
 import QuerySystem from './querySystem';
+import Registry from './registry';
 
 type ComponentFactory = () => Component;
 
-interface ComponentMetadata {
-  create: (...props: unknown[]) => Component,
-  position: number,
-}
-
 export default class Engine {
-  components: { [key: string]: ComponentMetadata } = {};
-  componentCount: number = 0;
+  components: Registry<ComponentFactory> = new Registry();
   systems: { [key: string]: System } = {};
+
   state: Component[][] = [];
+  maxEntityId: number = 0;
 
   constructor() {
     this.addSystem('query', new QuerySystem(this));
   }
   
   addComponent(name: string, componentFactory: ComponentFactory) {
-    this.components[name] = {
-      create: componentFactory,
-      position: this.componentCount,
-    };
-    this.componentCount += 1;
+    this.components.set(name, componentFactory);
   }
 
   addSystem(name: string, system: System) {
@@ -31,6 +24,14 @@ export default class Engine {
   }
 
   init() {
+    let componentsSize = this.components.values.length;
+    this.state = new Array(componentsSize);
+    for (let i = 0; i < componentsSize; i += 1) {
+      this.state[i] = [];
+    }
+  }
+  
+  createEntity() {
 
   }
 }
