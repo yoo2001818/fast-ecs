@@ -2,7 +2,7 @@ import { Component, System } from './type';
 import QuerySystem from './querySystem';
 import Registry from './registry';
 
-type ComponentFactory = () => Component;
+type ComponentFactory = (...args: any[]) => Component;
 
 export default class Engine {
   components: Registry<ComponentFactory> = new Registry();
@@ -12,6 +12,7 @@ export default class Engine {
   maxEntityId: number = 0;
 
   constructor() {
+    this.addComponent('epoch', (epoch: number) => epoch);
     this.addSystem('query', new QuerySystem(this));
   }
   
@@ -33,5 +34,9 @@ export default class Engine {
   
   createEntity() {
 
+  }
+
+  getComponentState(name: string) {
+    return this.state[this.components.indexOf(name)];
   }
 }
