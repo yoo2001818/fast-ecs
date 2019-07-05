@@ -1,6 +1,7 @@
 import { Component, System } from './type';
 import QuerySystem from './querySystem';
 import Registry from './registry';
+import Entity from './entity';
 
 type ComponentFactory = (...args: any[]) => Component;
 
@@ -33,7 +34,12 @@ export default class Engine {
   }
   
   createEntity() {
-
+    const epoches = this.getComponentState('epoch');
+    const id = this.maxEntityId;
+    const epoch = (epoches[id] || 0) + 1;
+    epoches[id] = epoch;
+    this.maxEntityId += 1;
+    return new Entity(this, id, epoch);
   }
 
   getComponentState(name: string) {
