@@ -1,11 +1,20 @@
 import Channel from './channel';
 
 export default class QueuedChannel<T> extends Channel<T> {
+  immediateListeners: ((event: T) => void)[] = [];
   queue: T[] = [];
   constructor() {
     super();
   }
-  emit(event: T) {
+  addImmediate(listener: (event: T) => void): void {
+    this.immediateListeners.push(listener);
+  }
+  removeImmediate(listener: (event: T) => void): void {
+    this.immediateListeners =
+      this.immediateListeners.filter(v => v !== listener);
+  }
+  emit(event: T): void {
+    this.immediateListeners.forEach(listener => listener(event));
     this.queue.push(event);
   }
   flush(): void {
