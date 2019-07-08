@@ -2,14 +2,14 @@ import { Component, System } from './type';
 import QuerySystem from './querySystem';
 import Registry from './registry';
 import Entity from './entity';
-import Channel from './channel';
+import QueuedChannel from './queuedChannel';
 
 type ComponentFactory = (...args: any[]) => Component;
 
 export default class Engine {
   components: Registry<ComponentFactory> = new Registry();
   systems: { [key: string]: System } = {};
-  channels: { [key: string]: Channel<any> } = {};
+  channels: { [key: string]: QueuedChannel<any> } = {};
 
   state: Component[][] = [];
   maxEntityId: number = 0;
@@ -28,7 +28,7 @@ export default class Engine {
   }
 
   getChannel(name: string) {
-    if (this.channels[name] == null) this.channels[name] = new Channel();
+    if (this.channels[name] == null) this.channels[name] = new QueuedChannel();
     return this.channels[name];
   }
 
@@ -46,7 +46,9 @@ export default class Engine {
     const epoch = (epoches[id] || 0) + 1;
     epoches[id] = epoch;
     this.maxEntityId += 1;
-    return new Entity(this, id, epoch);
+    const entity = new Entity(this, id, epoch);
+    this.getChannel('entityAdded').emit(entity);
+    return entity;
   }
 
   getComponentState(name: string) {
