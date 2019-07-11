@@ -10,8 +10,12 @@ export class Query {
     this.idPattern = idPattern;
     this.componentPattern = componentPattern;
   }
-  add(id: number) {
+  add(id: number): void {
     this.entityIds.push(id);
+  }
+  remove(id: number): void {
+    // TODO This is horribly inefficient...
+    this.entityIds = this.entityIds.filter(v => v !== id);
   }
 }
 
@@ -60,8 +64,8 @@ export default class QuerySystem {
     const state = this.engine.state;
     queries.forEach(query => {
       // Check if all components are given for the given query.
-      const matched =
-        query.idPattern.every(id => state[id][entity.id] !== undefined);
+      const matched = query.idPattern.every(id =>
+        state[id][entity.id] !== undefined);
       if (matched) {
         query.add(entity.id);
       }
@@ -71,8 +75,25 @@ export default class QuerySystem {
     const { entity, componentId } = event;
     const queries = this.componentQueriesInclusive[componentId];
     const state = this.engine.state;
+    queries.forEach(query => {
+      // Check if the entity matches with all components... except one.
+      const matched = query.idPattern.every(id =>
+        id === componentId || state[id][entity.id] !== undefined);
+      if (matched) {
+        query.remove(entity.id);
+      }
+    });
   };
   handleEntityRemove = (entity: Entity) => {
-
+    // This assumes that entity retains component information even it gets
+    // removed...
+    const state = this.engine.state;
+    this.queries.forEach(query => {
+      const matched = query.idPattern.every(id =>
+        state[id][entity.id] !== undefined);
+      if (matched) {
+        query.remove(entity.id);
+      }
+    });
   };
 }
