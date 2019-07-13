@@ -30,4 +30,15 @@ export default class Entity {
         .emit({ entity: this, componentId })
     }
   }
+
+  remove(name: string) {
+    const componentId = this.engine.components.indexOf(name);
+    const componentState = this.engine.state[componentId];
+    const hadBefore = componentState[this.id] !== undefined;
+    componentState[this.id] = undefined;
+    if (hadBefore) {
+      this.engine.getChannel('componentRemoved')
+        .emit({ entity: this, componentId })
+    }
+  }
 }
