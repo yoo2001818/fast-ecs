@@ -2,6 +2,8 @@ import { Component, System } from './type';
 import QuerySystem from './querySystem';
 import Registry from './registry';
 import Entity from './entity';
+import EntityChannel from './entityChannel';
+import Channel from './channel';
 import QueuedChannel from './queuedChannel';
 
 type ComponentFactory = (...args: any[]) => Component;
@@ -9,7 +11,9 @@ type ComponentFactory = (...args: any[]) => Component;
 export default class Engine {
   components: Registry<ComponentFactory> = new Registry();
   systems: { [key: string]: System } = {};
-  channels: { [key: string]: QueuedChannel<any> } = {};
+  globalChannels: { [key: string]: Channel<any> } = {};
+  entityChannels: { [key: string]: EntityChannel<any> } = {};
+  eventChannels: { [key: string]: QueuedChannel<any> } = {};
 
   state: Component[][] = [];
   maxEntityId: number = 0;
@@ -27,9 +31,24 @@ export default class Engine {
     this.systems[name] = system(this);
   }
 
-  getChannel(name: string) {
-    if (this.channels[name] == null) this.channels[name] = new QueuedChannel();
-    return this.channels[name];
+  getChannel(type: 'global' | 'entity' | 'event', name: string) {
+    switch (type) {
+      case 'global':
+        if (this.globalChannels[name] == null) {
+          this.globalChannels[name] = new Channel();
+        }
+        return this.globalChannels[name];
+      case 'entity':
+        if (this.entityChannels[name] == null) {
+          this.entityChannels[name] = new EntityChannel();
+        }
+        return this.entityChannels[name];
+      case 'event':
+        if (this.eventChannels[name] == null) {
+          this.eventChannels[name] = new QueuedChannel();
+        }
+        return this.eventChannels[name];
+    }
   }
 
   init() {
@@ -47,7 +66,7 @@ export default class Engine {
     epoches[id] = epoch;
     this.maxEntityId += 1;
     const entity = new Entity(this, id, epoch);
-    this.getChannel('entityAdded').emit(entity);
+    this.getChannel('entity', 'entityAdded').emit({ entity });
     return entity;
   }
 

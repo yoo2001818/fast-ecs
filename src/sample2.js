@@ -45,10 +45,10 @@ engine.addSystem('velocity', () => {
 
 engine.addComponent('position', v => v);
 
-let entity = engine.addEntity();
+let entity = engine.createEntity();
 entity.set('position', { x: 0, y: 1 });
 
 // Or...
-entity = engine.addEntity();
+entity = engine.createEntity();
 const positions = engine.getComponentState('position');
-positions[entity.id] = { 0, 0 };
+positions[entity.id] = { x: 0, y: 0 };
