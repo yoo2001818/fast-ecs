@@ -31,6 +31,9 @@ export default class Engine {
     this.systems[name] = system(this);
   }
 
+  getChannel(type: 'global', name: string): Channel<any>;
+  getChannel(type: 'entity', name: string): EntityChannel<any>;
+  getChannel(type: 'event', name: string): QueuedChannel<any>;
   getChannel(type: 'global' | 'entity' | 'event', name: string) {
     switch (type) {
       case 'global':

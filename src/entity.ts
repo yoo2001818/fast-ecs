@@ -26,7 +26,7 @@ export default class Entity {
     const hadBefore = componentState[this.id] !== undefined;
     componentState[this.id] = value;
     if (!hadBefore) {
-      this.engine.getChannel('componentAdded')
+      this.engine.getChannel('entity', 'componentAdded')
         .emit({ entity: this, componentId })
     }
   }
@@ -37,7 +37,7 @@ export default class Entity {
     const hadBefore = componentState[this.id] !== undefined;
     componentState[this.id] = undefined;
     if (hadBefore) {
-      this.engine.getChannel('componentRemoved')
+      this.engine.getChannel('entity', 'componentRemoved')
         .emit({ entity: this, componentId })
     }
   }
