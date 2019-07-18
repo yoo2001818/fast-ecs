@@ -2,18 +2,18 @@ import { Component, System } from './type';
 import QuerySystem from './querySystem';
 import Registry from './registry';
 import Entity from './entity';
-import EntityChannel from './entityChannel';
-import Channel from './channel';
-import QueuedChannel from './queuedChannel';
+import EntitySignal from './entitySignal';
+import Signal from './signal';
+import QueuedSignal from './queuedSignal';
 
 type ComponentFactory = (...args: any[]) => Component;
 
 export default class Engine {
   components: Registry<ComponentFactory> = new Registry();
   systems: { [key: string]: System } = {};
-  globalChannels: { [key: string]: Channel<any> } = {};
-  entityChannels: { [key: string]: EntityChannel<any> } = {};
-  eventChannels: { [key: string]: QueuedChannel<any> } = {};
+  globalSignals: { [key: string]: Signal<any> } = {};
+  entitySignals: { [key: string]: EntitySignal<any> } = {};
+  eventSignals: { [key: string]: QueuedSignal<any> } = {};
 
   state: Component[][] = [];
   maxEntityId: number = 0;
@@ -31,26 +31,26 @@ export default class Engine {
     this.systems[name] = system(this);
   }
 
-  getChannel(type: 'global', name: string): Channel<any>;
-  getChannel(type: 'entity', name: string): EntityChannel<any>;
-  getChannel(type: 'event', name: string): QueuedChannel<any>;
-  getChannel(type: 'global' | 'entity' | 'event', name: string) {
+  getSignal(type: 'global', name: string): Signal<any>;
+  getSignal(type: 'entity', name: string): EntitySignal<any>;
+  getSignal(type: 'event', name: string): QueuedSignal<any>;
+  getSignal(type: 'global' | 'entity' | 'event', name: string) {
     switch (type) {
       case 'global':
-        if (this.globalChannels[name] == null) {
-          this.globalChannels[name] = new Channel();
+        if (this.globalSignals[name] == null) {
+          this.globalSignals[name] = new Signal();
         }
-        return this.globalChannels[name];
+        return this.globalSignals[name];
       case 'entity':
-        if (this.entityChannels[name] == null) {
-          this.entityChannels[name] = new EntityChannel();
+        if (this.entitySignals[name] == null) {
+          this.entitySignals[name] = new EntitySignal();
         }
-        return this.entityChannels[name];
+        return this.entitySignals[name];
       case 'event':
-        if (this.eventChannels[name] == null) {
-          this.eventChannels[name] = new QueuedChannel();
+        if (this.eventSignals[name] == null) {
+          this.eventSignals[name] = new QueuedSignal();
         }
-        return this.eventChannels[name];
+        return this.eventSignals[name];
     }
   }
 
@@ -69,7 +69,7 @@ export default class Engine {
     epoches[id] = epoch;
     this.maxEntityId += 1;
     const entity = new Entity(this, id, epoch);
-    this.getChannel('entity', 'entityAdded').emit({ entity });
+    this.getSignal('entity', 'entityAdded').emit({ entity });
     return entity;
   }
 

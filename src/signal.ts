@@ -1,4 +1,4 @@
-export default class Channel<T> {
+export default class Signal<T> {
   listeners: ((event: T) => void)[] = [];
   add(listener: (event: T) => void): void {
     this.listeners.push(listener);

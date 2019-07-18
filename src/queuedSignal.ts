@@ -1,5 +1,5 @@
 
-export default class QueuedChannel<T> {
+export default class QueuedSignal<T> {
   immediateListeners: ((event: T) => void)[] = [];
   listeners: ((events: T[]) => void)[] = [];
   queue: T[] = [];

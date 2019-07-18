@@ -4,7 +4,7 @@ export interface EntityEvent {
   entity: Entity,
 }
 
-export default class EntityChannel<T extends EntityEvent> {
+export default class EntitySignal<T extends EntityEvent> {
   immediateListeners: ((event: T) => void)[] = [];
   listeners: ((events: T[]) => void)[] = [];
   queue: T[] = [];
