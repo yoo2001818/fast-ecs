@@ -26,7 +26,7 @@ export default class Entity {
     const hadBefore = componentState[this.id] !== undefined;
     componentState[this.id] = value;
     if (!hadBefore) {
-      this.engine.getChannel('entity', 'componentAdded')
+      this.engine.getSignal('entity', 'componentAdded')
         .emit({ entity: this, componentId })
     }
   }
@@ -37,8 +37,14 @@ export default class Entity {
     const hadBefore = componentState[this.id] !== undefined;
     componentState[this.id] = undefined;
     if (hadBefore) {
-      this.engine.getChannel('entity', 'componentRemoved')
+      this.engine.getSignal('entity', 'componentRemoved')
         .emit({ entity: this, componentId })
     }
+  }
+
+  removeEntity() {
+    this.engine.getComponentState('epoch')[this.id] += 1;
+    this.engine.getSignal('entity', 'entityRemoved')
+      .emit({ entity: this });
   }
 }
