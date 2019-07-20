@@ -26,11 +26,11 @@ export default class QuerySystem {
   componentQueriesInclusive: Query[][] = [];
   constructor(engine: Engine) {
     this.engine = engine;
-    this.engine.getChannel('componentAdd')
+    this.engine.getSignal('entity', 'componentAdd')
       .addImmediate(this.handleComponentAdd);
-    this.engine.getChannel('componentRemove')
+    this.engine.getSignal('entity', 'componentRemove')
       .addImmediate(this.handleComponentRemove);
-    this.engine.getChannel('entityRemove')
+    this.engine.getSignal('entity', 'entityRemove')
       .addImmediate(this.handleEntityRemove);
   }
   getQuery(pattern: string[]) {
