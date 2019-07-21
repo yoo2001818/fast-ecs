@@ -19,6 +19,7 @@ export default class Engine {
   maxEntityId: number = 0;
 
   constructor() {
+    this.addComponent('entity', (entity: Entity) => entity);
     this.addComponent('epoch', (epoch: number) => epoch);
     this.addSystem('query', () => new QuerySystem(this));
   }
@@ -70,6 +71,7 @@ export default class Engine {
     this.maxEntityId += 1;
     const entity = new Entity(this, id, epoch);
     this.getSignal('entity', 'entityAdded').emit({ entity });
+    this.getComponentState('entity')[id] = entity;
     return entity;
   }
 

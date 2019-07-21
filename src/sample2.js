@@ -1,4 +1,4 @@
-import Engine from './index';
+const Engine = require('./engine').default;
 
 const engine = new Engine();
 // engine.getSignal('global', 'update');
@@ -31,7 +31,7 @@ engine.addSystem('velocity', () => {
       positionUpdateSignal.emit(entity);
     });
   });
-  engine.addEventListener('velocityUpdate', events => {
+  engine.getSignal('entity', 'velocityUpdate').add(events => {
     events.forEach(event => {
       const position = positions[event.entity.id];
       const velocity = event.entity.get('velocity');
@@ -44,6 +44,8 @@ engine.addSystem('velocity', () => {
 });
 
 engine.addComponent('position', v => v);
+
+engine.init();
 
 let entity = engine.createEntity();
 entity.set('position', { x: 0, y: 1 });

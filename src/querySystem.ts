@@ -1,21 +1,26 @@
 import Engine from './engine';
 import Entity from './entity';
+import EntitySignal from './entitySignal';
 
 export class Query {
-  entityIds: number[] = [];
+  list: Entity[] = [];
   idPattern: number[];
   componentPattern: string[];
   refCount: number = 0;
+  added: EntitySignal<{ entity: Entity }> = new EntitySignal();
+  removed: EntitySignal<{ entity: Entity }> = new EntitySignal();
   constructor(idPattern: number[], componentPattern: string[]) {
     this.idPattern = idPattern;
     this.componentPattern = componentPattern;
   }
-  add(id: number): void {
-    this.entityIds.push(id);
+  add(entity: Entity): void {
+    this.list.push(entity);
+    this.added.emit({ entity });
   }
-  remove(id: number): void {
+  remove(entity: Entity): void {
     // TODO This is horribly inefficient...
-    this.entityIds = this.entityIds.filter(v => v !== id);
+    this.list = this.list.filter(v => v.id !== entity.id);
+    this.removed.emit({ entity });
   }
 }
 
@@ -67,7 +72,7 @@ export default class QuerySystem {
       const matched = query.idPattern.every(id =>
         state[id][entity.id] !== undefined);
       if (matched) {
-        query.add(entity.id);
+        query.add(entity);
       }
     });
   };
@@ -80,7 +85,7 @@ export default class QuerySystem {
       const matched = query.idPattern.every(id =>
         id === componentId || state[id][entity.id] !== undefined);
       if (matched) {
-        query.remove(entity.id);
+        query.remove(entity);
       }
     });
   };
@@ -92,7 +97,7 @@ export default class QuerySystem {
       const matched = query.idPattern.every(id =>
         state[id][entity.id] !== undefined);
       if (matched) {
-        query.remove(entity.id);
+        query.remove(entity);
       }
     });
   };
