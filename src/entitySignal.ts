@@ -8,6 +8,7 @@ export default class EntitySignal<T extends EntityEvent> {
   immediateListeners: ((event: T) => void)[] = [];
   listeners: ((events: T[]) => void)[] = [];
   queue: T[] = [];
+  onQueued: (signal: EntitySignal<T>) => void | null = null;
   addImmediate(listener: (event: T) => void): void {
     this.immediateListeners.push(listener);
   }
@@ -24,6 +25,9 @@ export default class EntitySignal<T extends EntityEvent> {
   emit(event: T): void {
     this.immediateListeners.forEach(listener => listener(event));
     this.queue.push(event);
+    if (this.queue.length === 1 && this.onQueued) {
+      this.onQueued(this);
+    }
   }
   flush(): void {
     this.listeners.forEach(listener => listener(this.queue));

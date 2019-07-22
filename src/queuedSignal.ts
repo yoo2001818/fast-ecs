@@ -3,6 +3,7 @@ export default class QueuedSignal<T> {
   immediateListeners: ((event: T) => void)[] = [];
   listeners: ((events: T[]) => void)[] = [];
   queue: T[] = [];
+  onQueued: (signal: QueuedSignal<T>) => void | null = null;
   addImmediate(listener: (event: T) => void): void {
     this.immediateListeners.push(listener);
   }
@@ -19,6 +20,9 @@ export default class QueuedSignal<T> {
   emit(event: T): void {
     this.immediateListeners.forEach(listener => listener(event));
     this.queue.push(event);
+    if (this.queue.length === 1 && this.onQueued) {
+      this.onQueued(this);
+    }
   }
   flush(): void {
     this.listeners.forEach(listener => listener(this.queue));
