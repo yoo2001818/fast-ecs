@@ -17,6 +17,7 @@ export default class Engine {
 
   state: Component[][] = [];
   maxEntityId: number = 0;
+  signalQueue: (QueuedSignal<any> | EntitySignal<any>)[] = [];
 
   constructor() {
     this.addComponent('entity', (entity: Entity) => entity);
@@ -39,20 +40,32 @@ export default class Engine {
     switch (type) {
       case 'global':
         if (this.globalSignals[name] == null) {
-          this.globalSignals[name] = new Signal();
+          let result = new Signal();
+          this.globalSignals[name] = result;
+          return result;
         }
         return this.globalSignals[name];
       case 'entity':
         if (this.entitySignals[name] == null) {
-          this.entitySignals[name] = new EntitySignal();
+          let result = new EntitySignal();
+          result.onQueued = () => this.addSignalQueue(result);
+          this.entitySignals[name] = result;
+          return result;
         }
         return this.entitySignals[name];
       case 'event':
         if (this.eventSignals[name] == null) {
-          this.eventSignals[name] = new QueuedSignal();
+          let result = new QueuedSignal();
+          result.onQueued = () => this.addSignalQueue(result);
+          this.eventSignals[name] = result;
+          return result;
         }
         return this.eventSignals[name];
     }
+  }
+
+  addSignalQueue(signal: QueuedSignal<any> | EntitySignal<any>) {
+    this.signalQueue.push(signal);
   }
 
   init() {
@@ -61,6 +74,11 @@ export default class Engine {
     for (let i = 0; i < componentsSize; i += 1) {
       this.state[i] = [];
     }
+  }
+
+  update() {
+    this.signalQueue.forEach((v) => v.flush());
+    this.signalQueue.length = 0;
   }
   
   createEntity() {
