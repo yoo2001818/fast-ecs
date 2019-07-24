@@ -77,6 +77,7 @@ export default class Engine {
   }
 
   update() {
+    this.getSignal('global', 'update').emit(null);
     this.signalQueue.forEach((v) => v.flush());
     this.signalQueue.length = 0;
   }

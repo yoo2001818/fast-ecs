@@ -54,3 +54,8 @@ entity.set('position', { x: 0, y: 1 });
 entity = engine.createEntity();
 const positions = engine.getComponentState('position');
 positions[entity.id] = { x: 0, y: 0 };
+
+engine.update();
+
+console.log(engine.state);
+console.log(engine.systems.query.queries);
