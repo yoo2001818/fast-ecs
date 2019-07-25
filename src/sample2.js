@@ -22,7 +22,7 @@ engine.addSystem('position', () => {
 
 engine.addSystem('velocity', () => {
   engine.getSignal('global', 'init').add(() => {
-    const query = engine.systems.query.getQuery(['position']);
+    const query = engine.systems.query.getQuery(['position', 'velocity']);
     const positions = engine.getComponentState('position');
     const positionUpdateSignal = engine.getSignal('entity', 'positionUpdate');
     engine.getSignal('global', 'update').add(() => {
@@ -48,11 +48,13 @@ engine.addSystem('velocity', () => {
 });
 
 engine.addComponent('position', v => v);
+engine.addComponent('velocity', v => v);
 
 engine.init();
 
 let entity = engine.createEntity();
 entity.set('position', { x: 0, y: 1 });
+entity.set('velocity', { x: 0, y: 1 });
 
 // Or...
 entity = engine.createEntity();
