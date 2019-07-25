@@ -74,6 +74,7 @@ export default class Engine {
     for (let i = 0; i < componentsSize; i += 1) {
       this.state[i] = [];
     }
+    this.getSignal('global', 'init').emit(null);
   }
 
   update() {
