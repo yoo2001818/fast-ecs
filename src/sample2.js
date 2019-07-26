@@ -60,6 +60,8 @@ entity.set('velocity', { x: 0, y: 1 });
 entity = engine.createEntity();
 const positions = engine.getComponentState('position');
 positions[entity.id] = { x: 0, y: 0 };
+engine.getSignal('entity', 'componentAdd')
+  .emit({ entity, componentId: engine.components.indexOf('position') });
 
 engine.update();
 
