@@ -5,7 +5,8 @@ const engine = new Engine();
 // Add components...
 engine
   .addComponent('position', new ComponentStore())
-  .addComponent('velocity', new ComponentStore());
+  .addComponent('velocity', new ComponentStore())
+  .addComponent('player', new ComponentStore());
 // Add systems...
 engine
   .addSystem('position', engine => {
@@ -22,18 +23,15 @@ engine
     const positions = engine.getComponent('position');
     const velocities = engine.getComponent('velocity');
     const query = engine.getQuery(['position', 'velocity']);
-    const positionUpdateSignal = engine.getEntitySignal('positionUpdate');
-    const velocityUpdateSignal = engine.getEntitySignal('velocityUpdate');
     return {
       init() {
-        velocityUpdateSignal.addListener(events => {
-          events.forEach(event => {
-            const { entity } = event;
+        velocities.changed.addListener(entities => {
+          entities.forEach(entity => {
             const position = positions.get(entity);
             const velocity = velocities.get(entity);
             if (velocity.x > 1000) {
               position.x = 0;
-              positionUpdateSignal.emit({ entity });
+              positions.setChanged(entity);
             }
           });
         });
@@ -44,7 +42,43 @@ engine
           const velocity = velocities.get(entity);
           position.x += velocity.x;
           position.y += velocity.y;
-          positionUpdateSignal.emit({ entity });
+          positions.setChanged(entity);
+        });
+      },
+    };
+  })
+  .addSystem('die', engine => {
+    const dieSignal = engine.getEntitySignal('die');
+    const positions = engine.getComponent('position');
+    return {
+      init() {
+        positions.changed.addListener(entities => {
+          entities.forEach(entity => {
+            const position = positions.get(entity);
+            if (Math.abs(position.x) > 1000 || Math.abs(position.y) > 1000) {
+              dieSignal.emit({ entity, reason: 'outOfBounds' });
+              engine.removeEntity(entity);
+            }
+          });
+        });
+      },
+    };
+  })
+  .addSystem('gameover', engine => {
+    const dieSignal = engine.getEntitySignal('die');
+    const players = engine.getComponent('player');
+    return {
+      init() {
+        dieSignal.addListener(entities => {
+          entities.forEach(entity => {
+            if (players.has(entity)) {
+              engine.createEntity({
+                position: { x: 0, y: 0 },
+                velocity: { x: 0, y: 0 },
+                player: true,
+              });
+            }
+          });
         });
       },
     };
@@ -57,5 +91,8 @@ engine.run(() => {
     velocity: { x: 0, y: 1 },
   });
   engine.getComponent('position').set(entity, { x: 0, y: 0 });
+  engine.createEntity({
+    position: { x: 0, y: 0 },
+  });
 });
 engine.update();
