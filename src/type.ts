@@ -10,9 +10,13 @@ export interface Signal<T> {
   removeListener(listener: (value: T) => void): void,
 }
 
-export interface QueuedSignal<T> extends Signal<T> {
+export interface QueuedSignal<T> {
   hasQueue(): boolean,
   flush(): void,
+  emit(value: T): void,
+  
+  addListener(listener: (values: T[]) => void): void,
+  removeListener(listener: (values: T[]) => void): void,
 
   addImmediateListener(listener: (value: T) => void): void,
   removeImmediateListener(listener: (value: T) => void): void,
@@ -38,20 +42,44 @@ export interface System {
   update?(payload: any): void,
 }
 
-export type ComponentMap = { [key: string]: ComponentStore<unknown> },
+export interface Query {
+  patterns: string[],
 
-export interface Engine<C = ComponentMap> {
-  addComponent<K extends keyof C>(name: K, componentStore: C[K]): Engine<C>,
-  getComponent<K extends keyof C>(name: K): C[K],
+  added: QueuedSignal<Entity>,
+  removed: QueuedSignal<Entity>,
+  forEach(callback: (entity: Entity) => void): void,
 
-  addSystem(name: string, initializer: () => System): void,
-  getSystem(name: string): System,
+  addRef(): void;
+  release(): void;
+}
+
+export interface QuerySystem extends System {
+  getQuery(names: string[]): Query;
+}
+
+export type ComponentMap = { [key: string]: unknown };
+export type SystemMap = { [key: string]: System };
+
+export interface Engine<C = ComponentMap, S = SystemMap> {
+  addComponent<K extends keyof C>(
+    name: K,
+    componentStore: ComponentStore<C[K]>,
+  ): Engine<C>,
+  getComponent<K extends keyof C>(name: K): ComponentStore<C[K]>,
+
+  addSystem<K extends keyof S>(
+    name: K,
+    initializer: () => S[K],
+  ): void,
+  getSystem<K extends keyof S>(name: K): S[K],
 
   getEntitySignal(name: string): QueuedSignal<any & { entity: Entity }>,
   getSignal(name: string): Signal<any>,
 
   createEntity(values?: { [key: string]: unknown }): Entity,
   deleteEntity(entity: Entity): void,
+
+  getQuery(names: (keyof C)[]): Query,
 
   init(): void,
   update(payload: any): void,
