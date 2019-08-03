@@ -44,6 +44,8 @@ export interface QueuedSignal<T> {
 
 export interface EntitySignal<T> extends QueuedSignal<T> {
   queue: SortedMap<Entity, T>,
+
+  constructor(getEntity: (value: T) => Entity): EntitySignal<T>,
 }
 
 export interface ComponentStore<T> extends SortedMap<Entity, T> {
