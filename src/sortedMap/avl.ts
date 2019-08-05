@@ -62,8 +62,58 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     return false;
   }
 
+  _rebalance(node: Node<K, V>): void {
+    if (node.right == null || node.left == null) return;
+    const diff = node.right.depth - node.left.depth;
+    if (diff < -1) {
+      // Rotate left
+    } else if (diff > 1) {
+      // Rotate right
+    }
+  }
+
+  _set(key: K, value: V, node: Node<K, V>): boolean {
+    // Descend down to the node...
+    const result = this.comparator(key, node.key);
+    if (result === 0) {
+      node.value = value;
+      return false;
+    }
+    if (result > 0) {
+      // key > current.key
+      if (node.right != null) {
+        this._set(key, value, node.right);
+        node.depth = node.right.depth + 1;
+        this._rebalance(node);
+      } else {
+        node.right = new Node(key, value);
+        node.depth += 1;
+        return true;
+      }
+    } else {
+      // key < current.key
+      if (node.left != null) {
+        this._set(key, value, node.left);
+        node.depth = node.left.depth + 1;
+        this._rebalance(node);
+      } else {
+        node.left = new Node(key, value);
+        node.depth += 1;
+        return true;
+      }
+    }
+  }
+
   set(key: K, value: V): this {
-    throw new Error("Method not implemented.");
+    if (this.root == null) {
+      this.root = new Node(key, value);
+      this.size += 1;
+      return this;
+    }
+    if (this._set(key, value, this.root)) {
+      this.size += 1;
+    }
+    return this;
   }
 
   delete(key: K): boolean {
