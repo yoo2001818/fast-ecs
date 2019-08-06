@@ -5,13 +5,13 @@ class Node<K, V> {
   value: V;
   left: Node<K, V> | null;
   right: Node<K, V> | null;
-  depth: number;
+  balanceFactor: number;
   constructor(key: K, value: V) {
     this.key = key;
     this.value = value;
     this.left = null;
     this.right = null;
-    this.depth = 0;
+    this.balanceFactor = 0;
   }
 }
 
@@ -25,8 +25,8 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = right.left;
   right.left = node;
   node.right = t23;
-  right.depth += 1;
-  node.depth -= 1;
+  node.balanceFactor += 1;
+  right.balanceFactor -= 1;
   return right;
 }
 
@@ -40,8 +40,8 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = left.right;
   left.right = node;
   node.left = t23;
-  left.depth += 1;
-  node.depth -= 1;
+  node.balanceFactor -= 1;
+  left.balanceFactor += 1;
   return left;
 }
 
@@ -94,10 +94,9 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
 
   _rebalance(node: Node<K, V>): void {
     if (node.right == null || node.left == null) return;
-    const diff = node.right.depth - node.left.depth;
-    if (diff < -1) {
+    if (node.balanceFactor < -1) {
       // Rotate left
-    } else if (diff > 1) {
+    } else if (node.balanceFactor > 1) {
       // Rotate right
     }
   }
@@ -113,22 +112,22 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       // key > current.key
       if (node.right != null) {
         this._set(key, value, node.right);
-        node.depth = node.right.depth + 1;
+        node.balanceFactor += 1;
         this._rebalance(node);
       } else {
         node.right = new Node(key, value);
-        node.depth += 1;
+        node.balanceFactor += 1;
         return true;
       }
     } else {
       // key < current.key
       if (node.left != null) {
         this._set(key, value, node.left);
-        node.depth = node.left.depth + 1;
+        node.balanceFactor -= 1;
         this._rebalance(node);
       } else {
         node.left = new Node(key, value);
-        node.depth += 1;
+        node.balanceFactor -= 1;
         return true;
       }
     }
