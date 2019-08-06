@@ -15,6 +15,36 @@ class Node<K, V> {
   }
 }
 
+function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
+  //     node                          right
+  //    /    \                        /     \
+  //   t1   right      -->          node    t4
+  //       /     \                 /    \
+  //      t23    t4               t1    t23
+  let right = node.right;
+  let t23 = right.left;
+  right.left = node;
+  node.right = t23;
+  right.depth += 1;
+  node.depth -= 1;
+  return right;
+}
+
+function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
+  //         node                   left
+  //        /    \                 /    \
+  //      left   t4    -->        t1   node
+  //     /    \                       /    \
+  //    t1    t23                   t23    t4
+  let left = node.left;
+  let t23 = left.right;
+  left.right = node;
+  node.left = t23;
+  left.depth += 1;
+  node.depth -= 1;
+  return left;
+}
+
 export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
   comparator: (a: K, b: K) => number;
   size: number = 0;
