@@ -92,43 +92,47 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     return false;
   }
 
-  _rebalance(node: Node<K, V>): void {
-    if (node.right == null || node.left == null) return;
+  _rebalance(node: Node<K, V>): Node<K, V> {
+    if (node.right == null || node.left == null) return node;
     if (node.balanceFactor < -1) {
       // Rotate left
+      return leftRotate(node);
     } else if (node.balanceFactor > 1) {
       // Rotate right
+      return rightRotate(node);
     }
+    return node;
   }
 
-  _set(key: K, value: V, node: Node<K, V>): boolean {
+  _set(key: K, value: V, node: Node<K, V>): Node<K, V> {
     // Descend down to the node...
     const result = this.comparator(key, node.key);
     if (result === 0) {
       node.value = value;
-      return false;
+      this.size += 1;
+      return node;
     }
     if (result > 0) {
       // key > current.key
       if (node.right != null) {
-        this._set(key, value, node.right);
+        node.right = this._set(key, value, node.right);
         node.balanceFactor += 1;
-        this._rebalance(node);
+        return this._rebalance(node);
       } else {
         node.right = new Node(key, value);
         node.balanceFactor += 1;
-        return true;
+        return node;
       }
     } else {
       // key < current.key
       if (node.left != null) {
-        this._set(key, value, node.left);
+        node.left = this._set(key, value, node.left);
         node.balanceFactor -= 1;
-        this._rebalance(node);
+        return this._rebalance(node);
       } else {
         node.left = new Node(key, value);
         node.balanceFactor -= 1;
-        return true;
+        return node;
       }
     }
   }
@@ -139,9 +143,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       this.size += 1;
       return this;
     }
-    if (this._set(key, value, this.root)) {
-      this.size += 1;
-    }
+    this.root = this._set(key, value, this.root);
     return this;
   }
 
