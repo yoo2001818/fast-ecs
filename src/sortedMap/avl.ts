@@ -25,6 +25,7 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = right.left;
   right.left = node;
   node.right = t23;
+  console.log(node.balanceFactor, right.balanceFactor);
   node.balanceFactor += 1;
   right.balanceFactor -= 1;
   return right;
@@ -93,13 +94,11 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
   }
 
   _rebalance(node: Node<K, V>): Node<K, V> {
-    if (node.right == null || node.left == null) return node;
+    console.log('aaa', node.balanceFactor);
     if (node.balanceFactor < -1) {
-      // Rotate left
-      return leftRotate(node);
-    } else if (node.balanceFactor > 1) {
-      // Rotate right
       return rightRotate(node);
+    } else if (node.balanceFactor > 1) {
+      return leftRotate(node);
     }
     return node;
   }
@@ -109,7 +108,6 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     const result = this.comparator(key, node.key);
     if (result === 0) {
       node.value = value;
-      this.size += 1;
       return node;
     }
     if (result > 0) {
@@ -121,6 +119,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       } else {
         node.right = new Node(key, value);
         node.balanceFactor += 1;
+        this.size += 1;
         return node;
       }
     } else {
@@ -132,6 +131,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       } else {
         node.left = new Node(key, value);
         node.balanceFactor -= 1;
+        this.size += 1;
         return node;
       }
     }
