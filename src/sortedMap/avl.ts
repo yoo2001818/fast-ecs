@@ -25,8 +25,16 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = right.left;
   right.left = node;
   node.right = t23;
-  node.balanceFactor = 0;
-  right.balanceFactor = 0;
+  // If right balance factor is >0, it means t4 is longer
+  // If right balance factor is <0, it means t23 is longer
+  // If node balance factor is <0, or 0, it means t1 is longer
+  //
+  // Considering this, we can build a formula to recalculate balance factor:
+  // balance factor of X = B(X)
+  // B(node) = B(node) - 1 - B(right)
+  // B(right) = B(right) - 1
+  node.balanceFactor = node.balanceFactor - 1 - right.balanceFactor;
+  right.balanceFactor = right.balanceFactor - 1;
   return right;
 }
 
@@ -40,8 +48,16 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = left.right;
   left.right = node;
   node.left = t23;
-  node.balanceFactor = 0;
-  left.balanceFactor = 0;
+  // If left balance factor is <0, it means t1 is longer
+  // If left balance factor is >0, it means t23 is longer
+  // If node balance factor is >0, or 0, it means t4 is longer
+  //
+  // Considering this, we can build a formula to recalculate balance factor:
+  // balance factor of X = B(X)
+  // B(node) = B(node) + 1 - B(left)
+  // B(left) = B(left) + 1
+  node.balanceFactor = node.balanceFactor + 1 - left.balanceFactor;
+  left.balanceFactor = left.balanceFactor + 1;
   return left;
 }
 
@@ -93,7 +109,6 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
   }
 
   _rebalance(node: Node<K, V>): Node<K, V> {
-    console.log('aaa', node.balanceFactor);
     if (node.balanceFactor < -1) {
       if (node.left != null && node.left.balanceFactor >= 1) {
         node.left = leftRotate(node.left);

@@ -9,3 +9,4 @@ describe('AVLSortedMap', () => {
     console.log(JSON.stringify(map, null, 2));
   });
 });
+;
