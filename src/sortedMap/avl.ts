@@ -167,8 +167,35 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     return this;
   }
 
+  _delete(key: K, node: Node<K, V>): Node<K, V> {
+    // Descend down to the node...
+    const result = this.comparator(key, node.key);
+    if (result === 0) {
+      // Node is found - replace the node and retrace....
+      return node;
+    }
+    if (result > 0) {
+      // key > current.key
+      if (node.right == null) {
+        return null;
+      }
+      node.right = this._delete(key, node.right);
+      node.balanceFactor += 1;
+      return this._rebalance(node);
+    } else {
+      // key < current.key
+      if (node.left == null) {
+        return null;
+      }
+      node.left = this._delete(key, node.left);
+      node.balanceFactor -= 1;
+      return this._rebalance(node);
+    }
+  }
+
   delete(key: K): boolean {
-    throw new Error("Method not implemented.");
+    this.root = this._delete(key, this.root);
+    return false;
   }
 
   clear(): void {
