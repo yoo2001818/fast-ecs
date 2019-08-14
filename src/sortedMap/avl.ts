@@ -61,6 +61,18 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   return left;
 }
 
+function min<K, V>(node: Node<K, V>): Node<K, V> {
+  let current = node;
+  while (current.left != null) current = current.left;
+  return current;
+}
+
+function max<K, V>(node: Node<K, V>): Node<K, V> {
+  let current = node;
+  while (current.right != null) current = current.right;
+  return current;
+}
+
 export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
   comparator: (a: K, b: K) => number;
   size: number = 0;
@@ -180,7 +192,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
         return null;
       }
       node.right = this._delete(key, node.right);
-      node.balanceFactor += 1;
+      node.balanceFactor -= 1;
       return this._rebalance(node);
     } else {
       // key < current.key
