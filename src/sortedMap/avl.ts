@@ -183,8 +183,31 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     // Descend down to the node...
     const result = this.comparator(key, node.key);
     if (result === 0) {
-      // Node is found - replace the node and retrace....
-      return node;
+      // Node is found - replace the node and retrace.
+      if (node.left == null && node.right == null) {
+        // If the node is empty, simply delete the node.
+        return null;
+      } else if (node.left == null) {
+        // If the node has only one child, use other one.
+        return node.right;
+      } else if (node.right == null) {
+        return node.left;
+      } else {
+        // If both nodes are present, remove leftmost node from right node.
+        // TODO rebalance
+        let leftmostParent = node;
+        let leftmost = node.right;
+        while (leftmost.left != null) {
+          leftmostParent = leftmost;
+          leftmost = leftmost.left;
+        }
+        if (leftmostParent === node) {
+          leftmostParent.right = null;
+        } else {
+          leftmostParent.left = null;
+        }
+        return leftmostParent;
+      }
     }
     if (result > 0) {
       // key > current.key
