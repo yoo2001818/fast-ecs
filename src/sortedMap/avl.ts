@@ -199,14 +199,22 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
         let leftmost = node.right;
         while (leftmost.left != null) {
           leftmostParent = leftmost;
+          leftmost.balanceFactor += 1;
           leftmost = leftmost.left;
+          // TODO Rebalance
         }
         if (leftmostParent === node) {
           leftmostParent.right = null;
         } else {
-          leftmostParent.left = null;
+          // If leftmost node has right node, replace parent's left node with
+          // it.
+          leftmostParent.left = leftmost.right;
+          // Replace the node in place...
+          leftmost.left = node.left;
+          leftmost.right = node.right;
+          leftmost.balanceFactor = node.balanceFactor;
         }
-        return leftmostParent;
+        return leftmost;
       }
     }
     if (result > 0) {
@@ -223,7 +231,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
         return null;
       }
       node.left = this._delete(key, node.left);
-      node.balanceFactor -= 1;
+      node.balanceFactor += 1;
       return this._rebalance(node);
     }
   }
