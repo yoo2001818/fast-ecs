@@ -17,7 +17,7 @@ function assertNodeHeight<K, V>(node: Node<K, V>): number {
 }
 
 describe('AVLSortedMap', () => {
-  it('should correctly insert nodes', () => {
+  it('should correctly insert nodes for simple tree', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
     map.set(1, 1);
     map.set(3, 3);
@@ -26,15 +26,13 @@ describe('AVLSortedMap', () => {
     expect([...map.values()]).toEqual([1, 2, 3]);
     assertNodeHeight(map.root);
   });
-  it('should correctly insert nodes 2', () => {
-    console.log('---');
+  it('should correctly insert nodes for complex tree', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
-    let input = Array.from({ length: 5 }, (_, i) => i);
+    let input = Array.from({ length: 100 }, (_, i) => i);
     input.forEach(v => map.set(v, v));
     expect(map.size).toBe(input.length);
     assertNodeHeight(map.root);
     expect([...map.values()]).toEqual(input);
-    console.log(JSON.stringify(map, null, 2));
   });
   it('should correctly remove nodes', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);

@@ -21,7 +21,6 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   //   t1   right      -->          node    t4
   //       /     \                 /    \
   //      t23    t4               t1    t23
-  console.log('pre-left', node);
   let right = node.right;
   let t23 = right.left;
   right.left = node;
@@ -36,7 +35,6 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   // B(right) = B(right) - 1
   node.balanceFactor = node.balanceFactor - 1 - right.balanceFactor;
   right.balanceFactor = right.balanceFactor - 1;
-  console.log('left', right);
   return right;
 }
 
@@ -60,7 +58,6 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   // B(left) = B(left) + 1
   node.balanceFactor = node.balanceFactor + 1 - left.balanceFactor;
   left.balanceFactor = left.balanceFactor + 1;
-  console.log('right', left);
   return left;
 }
 
@@ -83,7 +80,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
 
   constructor(comparator: (a: K, b: K) => number) {
     this.comparator = comparator;
-  }
+ }
 
   get(key: K): V | undefined {
     if (this.root == null) {
@@ -155,7 +152,8 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
         node.right = result[1];
         if (result[0]) {
           node.balanceFactor += 1;
-          return [true, this._rebalance(node)];
+          const balanceResult = this._rebalance(node);
+          return [balanceResult.balanceFactor !== 0, balanceResult];
         }
         return [false, node];
       } else {
@@ -171,7 +169,8 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
         node.left = result[1];
         if (result[0]) {
           node.balanceFactor -= 1;
-          return [true, this._rebalance(node)];
+          const balanceResult = this._rebalance(node);
+          return [balanceResult.balanceFactor !== 0, balanceResult];
         }
         return [false, node];
       } else {
@@ -191,7 +190,6 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     }
     const result = this._set(key, value, this.root);
     this.root = result[1];
-    console.log(JSON.stringify(this.root, null, 2));
     return this;
   }
 
