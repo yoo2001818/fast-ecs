@@ -1,6 +1,6 @@
 import { SortedMap } from './index';
 
-class Node<K, V> {
+export class Node<K, V> {
   key: K;
   value: V;
   left: Node<K, V> | null;
@@ -21,6 +21,7 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   //   t1   right      -->          node    t4
   //       /     \                 /    \
   //      t23    t4               t1    t23
+  console.log('pre-left', node);
   let right = node.right;
   let t23 = right.left;
   right.left = node;
@@ -35,6 +36,7 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   // B(right) = B(right) - 1
   node.balanceFactor = node.balanceFactor - 1 - right.balanceFactor;
   right.balanceFactor = right.balanceFactor - 1;
+  console.log('left', right);
   return right;
 }
 
@@ -58,6 +60,7 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   // B(left) = B(left) + 1
   node.balanceFactor = node.balanceFactor + 1 - left.balanceFactor;
   left.balanceFactor = left.balanceFactor + 1;
+  console.log('right', left);
   return left;
 }
 
@@ -135,36 +138,47 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     return node;
   }
 
-  _set(key: K, value: V, node: Node<K, V>): Node<K, V> {
+  // In here, boolean means whether if the height has been increased in its
+  // child. This wouldn't happen if left node is set when right node is set, and
+  // vice versa.
+  _set(key: K, value: V, node: Node<K, V>): [boolean, Node<K, V>] {
     // Descend down to the node...
     const result = this.comparator(key, node.key);
     if (result === 0) {
       node.value = value;
-      return node;
+      return [false, node];
     }
     if (result > 0) {
       // key > current.key
       if (node.right != null) {
-        node.right = this._set(key, value, node.right);
-        node.balanceFactor += 1;
-        return this._rebalance(node);
+        const result = this._set(key, value, node.right);
+        node.right = result[1];
+        if (result[0]) {
+          node.balanceFactor += 1;
+          return [true, this._rebalance(node)];
+        }
+        return [false, node];
       } else {
         node.right = new Node(key, value);
         node.balanceFactor += 1;
         this.size += 1;
-        return node;
+        return [node.left == null, node];
       }
     } else {
       // key < current.key
       if (node.left != null) {
-        node.left = this._set(key, value, node.left);
-        node.balanceFactor -= 1;
-        return this._rebalance(node);
+        const result = this._set(key, value, node.left);
+        node.left = result[1];
+        if (result[0]) {
+          node.balanceFactor -= 1;
+          return [true, this._rebalance(node)];
+        }
+        return [false, node];
       } else {
         node.left = new Node(key, value);
         node.balanceFactor -= 1;
         this.size += 1;
-        return node;
+        return [node.right == null, node];
       }
     }
   }
@@ -175,7 +189,9 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       this.size += 1;
       return this;
     }
-    this.root = this._set(key, value, this.root);
+    const result = this._set(key, value, this.root);
+    this.root = result[1];
+    console.log(JSON.stringify(this.root, null, 2));
     return this;
   }
 
@@ -186,7 +202,6 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       // Node is found - replace the node and retrace.
       if (node.left == null && node.right == null) {
         // If the node is empty, simply delete the node.
-        this.size -= 1;
         return [true, null];
       } else if (node.left == null) {
         // If the node has only one child, use other one.
