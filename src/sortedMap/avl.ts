@@ -179,19 +179,22 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     return this;
   }
 
-  _delete(key: K, node: Node<K, V>): Node<K, V> {
+  _delete(key: K, node: Node<K, V>): [boolean, Node<K, V> | null] {
     // Descend down to the node...
     const result = this.comparator(key, node.key);
     if (result === 0) {
       // Node is found - replace the node and retrace.
       if (node.left == null && node.right == null) {
         // If the node is empty, simply delete the node.
-        return null;
+        this.size -= 1;
+        return [true, null];
       } else if (node.left == null) {
         // If the node has only one child, use other one.
-        return node.right;
+        this.size -= 1;
+        return [true, node.right];
       } else if (node.right == null) {
-        return node.left;
+        this.size -= 1;
+        return [true, node.left];
       } else {
         // If both nodes are present, remove leftmost node from right node.
         // TODO rebalance
@@ -209,36 +212,48 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
           // If leftmost node has right node, replace parent's left node with
           // it.
           leftmostParent.left = leftmost.right;
-          // Replace the node in place...
-          leftmost.left = node.left;
-          leftmost.right = node.right;
-          leftmost.balanceFactor = node.balanceFactor;
         }
-        return leftmost;
+        // Replace the node in place...
+        leftmost.left = node.left;
+        leftmost.right = node.right;
+        leftmost.balanceFactor = node.balanceFactor - 1;
+        this.size -= 1;
+        return [true, leftmost];
       }
-    }
-    if (result > 0) {
+    } else if (result > 0) {
       // key > current.key
       if (node.right == null) {
-        return null;
+        return [false, node];
       }
-      node.right = this._delete(key, node.right);
-      node.balanceFactor -= 1;
-      return this._rebalance(node);
+      const result = this._delete(key, node.right);
+      if (result[0]) {
+        node.right = result[1];
+        node.balanceFactor -= 1;
+        return [true, this._rebalance(node)];
+      } else {
+        return [false, node];
+      }
     } else {
       // key < current.key
       if (node.left == null) {
-        return null;
+        return [false, node];
       }
-      node.left = this._delete(key, node.left);
-      node.balanceFactor += 1;
-      return this._rebalance(node);
+      const result = this._delete(key, node.left);
+      if (result[0]) {
+        node.left = result[1];
+        node.balanceFactor += 1;
+        return [true, this._rebalance(node)];
+      } else {
+        return [false, node];
+      }
     }
   }
 
   delete(key: K): boolean {
-    this.root = this._delete(key, this.root);
-    return false;
+    if (this.root == null) return false;
+    const result = this._delete(key, this.root);
+    this.root = result[1];
+    return result[0];
   }
 
   clear(): void {
@@ -246,20 +261,57 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     this.size = 0;
   }
 
-  entries(): IterableIterator<[K, V]> {
-    throw new Error("Method not implemented.");
+  *entries(): IterableIterator<[K, V]> {
+    // Stack only stores reentry nodes.
+    let stack: Node<K, V>[] = [];
+    // For that reason, we need to descend down to the leftmost node.
+    {
+      let current = this.root;
+      stack.push(current);
+      while (current.left != null) {
+        stack.push(current.left);
+        current = current.left;
+      }
+    }
+    while (stack.length > 0) {
+      let node = stack.pop();
+      yield [node.key, node.value];
+      if (node.right != null) {
+        let current = node.right;
+        stack.push(current);
+        while (current.left != null) {
+          stack.push(current.left);
+          current = current.left;
+        }
+      }
+    }
   }
-  keys(): IterableIterator<K> {
-    throw new Error("Method not implemented.");
+  *keys(): IterableIterator<K> {
+    let entries = this.entries();
+    while (true) {
+      let { done, value } = entries.next();
+      if (done) break;
+      yield value[0];
+    }
   }
-  values(): IterableIterator<V> {
-    throw new Error("Method not implemented.");
+  *values(): IterableIterator<V> {
+    let entries = this.entries();
+    while (true) {
+      let { done, value } = entries.next();
+      if (done) break;
+      yield value[1];
+    }
   }
-  forEach(callback: (value: V, key: K, map: SortedMap<K, V>) => void, thisArg?: any): void {
-    throw new Error("Method not implemented.");
+  forEach(callback: (value: V, key: K, map: this) => void, thisArg?: any): void {
+    let entries = this.entries();
+    while (true) {
+      let { done, value } = entries.next();
+      if (done) break;
+      callback.call(thisArg, value[1], value[0], this);
+    }
   }
   [Symbol.iterator](): IterableIterator<[K, V]> {
-    throw new Error("Method not implemented.");
+    return this.entries();
   }
   [Symbol.toStringTag]: string;
 
