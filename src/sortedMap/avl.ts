@@ -61,18 +61,6 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   return left;
 }
 
-function min<K, V>(node: Node<K, V>): Node<K, V> {
-  let current = node;
-  while (current.left != null) current = current.left;
-  return current;
-}
-
-function max<K, V>(node: Node<K, V>): Node<K, V> {
-  let current = node;
-  while (current.right != null) current = current.right;
-  return current;
-}
-
 export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
   comparator: (a: K, b: K) => number;
   size: number = 0;
@@ -193,71 +181,97 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     return this;
   }
 
-  _delete(key: K, node: Node<K, V>): [boolean, Node<K, V> | null] {
+  _deleteDescend(node: Node<K, V>): [boolean, Node<K, V>, Node<K, V>] {
+    if (node.left == null) {
+      return [true, null, node];
+    }
+    let result = this._deleteDescend(node.left);
+    if (result[0]) {
+      node.left = result[1];
+      node.balanceFactor += 1;
+      const balanceResult = this._rebalance(node);
+      // If balance factor becomes 0, it means the height decreasing has
+      // actually occurred and propagation is necessary to the parent.
+      return [balanceResult.balanceFactor === 0, balanceResult, result[2]];
+    } else {
+      return [false, node, result[2]];
+    }
+  }
+
+  // First boolean means if the deletion happened,
+  // second boolean means if node's height has been changed.
+  _delete(key: K, node: Node<K, V>): [boolean, boolean, Node<K, V> | null] {
     // Descend down to the node...
     const result = this.comparator(key, node.key);
     if (result === 0) {
       // Node is found - replace the node and retrace.
+      this.size -= 1;
       if (node.left == null && node.right == null) {
         // If the node is empty, simply delete the node.
-        return [true, null];
+        return [true, true, null];
       } else if (node.left == null) {
         // If the node has only one child, use other one.
-        this.size -= 1;
-        return [true, node.right];
+        return [true, true, node.right];
       } else if (node.right == null) {
-        this.size -= 1;
-        return [true, node.left];
+        return [true, true, node.left];
       } else {
         // If both nodes are present, remove leftmost node from right node.
-        // TODO rebalance
-        let leftmostParent = node;
-        let leftmost = node.right;
-        while (leftmost.left != null) {
-          leftmostParent = leftmost;
-          leftmost.balanceFactor += 1;
-          leftmost = leftmost.left;
-          // TODO Rebalance
-        }
-        if (leftmostParent === node) {
-          leftmostParent.right = null;
-        } else {
-          // If leftmost node has right node, replace parent's left node with
-          // it.
-          leftmostParent.left = leftmost.right;
-        }
-        // Replace the node in place...
-        leftmost.left = node.left;
-        leftmost.right = node.right;
-        leftmost.balanceFactor = node.balanceFactor - 1;
-        this.size -= 1;
-        return [true, leftmost];
+        const deleteResult = this._deleteDescend(node.right);
+        const newNode = deleteResult[2];
+        newNode.left = node.left;
+        newNode.right = deleteResult[1];
+        newNode.balanceFactor = node.balanceFactor -
+          (deleteResult[0] ? 1 : 0);
+        const balanceResult = this._rebalance(newNode);
+        // If balance factor becomes 0, it means the height decreasing has
+        // actually occurred and propagation is necessary to the parent.
+        return [true, balanceResult.balanceFactor === 0, balanceResult];
       }
     } else if (result > 0) {
       // key > current.key
       if (node.right == null) {
-        return [false, node];
+        return [false, false, node];
       }
       const result = this._delete(key, node.right);
-      if (result[0]) {
-        node.right = result[1];
+      node.right = result[2];
+      if (result[1]) {
         node.balanceFactor -= 1;
-        return [true, this._rebalance(node)];
+        if (node.balanceFactor === -1) {
+          // Height decrease is absorbed at this node.
+          //    2            2
+          //   / \    -->   /
+          //  1  3         1
+          return [result[0], false, node];
+        }
+        const balanceResult = this._rebalance(node);
+        // If balance factor becomes 0, it means the height decreasing has
+        // actually occurred and propagation is necessary to the parent.
+        return [result[0], balanceResult.balanceFactor === 0, balanceResult];
       } else {
-        return [false, node];
+        return [result[0], false, node];
       }
     } else {
       // key < current.key
       if (node.left == null) {
-        return [false, node];
+        return [false, false, node];
       }
       const result = this._delete(key, node.left);
-      if (result[0]) {
-        node.left = result[1];
+      node.left = result[2];
+      if (result[1]) {
         node.balanceFactor += 1;
-        return [true, this._rebalance(node)];
+        if (node.balanceFactor === 1) {
+          // Height decrease is absorbed at this node.
+          //    2            2
+          //   / \    -->     \
+          //  1  3            3
+          return [result[0], false, node];
+        }
+        const balanceResult = this._rebalance(node);
+        // If balance factor becomes 0, it means the height decreasing has
+        // actually occurred and propagation is necessary to the parent.
+        return [result[0], balanceResult.balanceFactor === 0, balanceResult];
       } else {
-        return [false, node];
+        return [result[0], false, node];
       }
     }
   }
@@ -265,7 +279,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
   delete(key: K): boolean {
     if (this.root == null) return false;
     const result = this._delete(key, this.root);
-    this.root = result[1];
+    this.root = result[2];
     return result[0];
   }
 
