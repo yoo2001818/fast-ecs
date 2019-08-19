@@ -176,8 +176,44 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       this.size += 1;
       return this;
     }
-    const result = this._set(key, value, this.root);
-    this.root = result[1];
+    // Descend down to the created node...
+    let stack: Node<K, V>[] = [];
+    {
+      let current = this.root;
+      while (true) {
+        stack.push(current);
+        const result = this.comparator(key, current.key);
+        if (result === 0) {
+          current.value = value;
+          return this;
+        } else if (result > 0) {
+          // key > current.key
+          if (current.right != null) {
+            current = current.right;
+          } else {
+            current.right = new Node(key, value);
+            current.balanceFactor += 1;
+            this.size += 1;
+            break;
+          }
+        } else if (result < 0) {
+          // key < current.key
+          if (current.left != null) {
+            current = current.left;
+          } else {
+            current.left = new Node(key, value);
+            current.balanceFactor -= 1;
+            this.size += 1;
+            break;
+          }
+        }
+      }
+    }
+    // Then perform a retracing loop.
+    while (stack.length > 0) {
+      let current = stack.pop();
+      console.log(current);
+    }
     return this;
   }
 
@@ -340,6 +376,8 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
   [Symbol.iterator](): IterableIterator<[K, V]> {
     return this.entries();
   }
-  [Symbol.toStringTag]: string;
+  get [Symbol.toStringTag](): string {
+    return 'AVLSortedMap';
+  }
 
 }
