@@ -65,6 +65,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
   comparator: (a: K, b: K) => number;
   size: number = 0;
   root: Node<K, V> | null = null;
+  _stack: [Node<K, V>, boolean][] = [];
 
   constructor(comparator: (a: K, b: K) => number) {
     this.comparator = comparator;
@@ -123,53 +124,6 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     return node;
   }
 
-  // In here, boolean means whether if the height has been increased in its
-  // child. This wouldn't happen if left node is set when right node is set, and
-  // vice versa.
-  _set(key: K, value: V, node: Node<K, V>): [boolean, Node<K, V>] {
-    // Descend down to the node...
-    const result = this.comparator(key, node.key);
-    if (result === 0) {
-      node.value = value;
-      return [false, node];
-    }
-    if (result > 0) {
-      // key > current.key
-      if (node.right != null) {
-        const result = this._set(key, value, node.right);
-        node.right = result[1];
-        if (result[0]) {
-          node.balanceFactor += 1;
-          const balanceResult = this._rebalance(node);
-          return [balanceResult.balanceFactor !== 0, balanceResult];
-        }
-        return [false, node];
-      } else {
-        node.right = new Node(key, value);
-        node.balanceFactor += 1;
-        this.size += 1;
-        return [node.left == null, node];
-      }
-    } else {
-      // key < current.key
-      if (node.left != null) {
-        const result = this._set(key, value, node.left);
-        node.left = result[1];
-        if (result[0]) {
-          node.balanceFactor -= 1;
-          const balanceResult = this._rebalance(node);
-          return [balanceResult.balanceFactor !== 0, balanceResult];
-        }
-        return [false, node];
-      } else {
-        node.left = new Node(key, value);
-        node.balanceFactor -= 1;
-        this.size += 1;
-        return [node.right == null, node];
-      }
-    }
-  }
-
   set(key: K, value: V): this {
     if (this.root == null) {
       this.root = new Node(key, value);
@@ -177,11 +131,11 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       return this;
     }
     // Descend down to the created node...
-    let stack: Node<K, V>[] = [];
+    // right = true
+    let depth = 0;
     {
       let current = this.root;
       while (true) {
-        stack.push(current);
         const result = this.comparator(key, current.key);
         if (result === 0) {
           current.value = value;
@@ -190,6 +144,14 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
           // key > current.key
           if (current.right != null) {
             current = current.right;
+            if (this._stack.length > depth) {
+              let item = this._stack[depth];
+              item[0] = current;
+              item[1] = true;
+            } else {
+              this._stack[depth] = [current, true];
+            }
+            depth += 1;
           } else {
             current.right = new Node(key, value);
             current.balanceFactor += 1;
@@ -200,6 +162,14 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
           // key < current.key
           if (current.left != null) {
             current = current.left;
+            if (this._stack.length > depth) {
+              let item = this._stack[depth];
+              item[0] = current;
+              item[1] = false;
+            } else {
+              this._stack[depth] = [current, false];
+            }
+            depth += 1;
           } else {
             current.left = new Node(key, value);
             current.balanceFactor -= 1;
@@ -210,10 +180,23 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       }
     }
     // Then perform a retracing loop.
-    while (stack.length > 0) {
-      let current = stack.pop();
-      console.log(current);
+    while (depth > 0) {
+      depth -= 1;
+      let item = this._stack[depth];
+      let current = item[0];
+      let dir = item[1];
+      // Allow gc
+      item[0] = null;
+      let parent = depth > 1 ? this._stack[depth - 1][0] : this.root;
+      const newCurrent = this._rebalance(current);
+      if (dir) parent.right = newCurrent;
+      else parent.left = newCurrent;
+      if (newCurrent.balanceFactor === 0) {
+        return this;
+      }
+      parent.balanceFactor += dir ? 1 : -1;
     }
+    this.root = this._rebalance(this.root);
     return this;
   }
 

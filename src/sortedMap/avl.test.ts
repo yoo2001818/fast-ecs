@@ -29,13 +29,14 @@ describe('AVLSortedMap', () => {
     expect([...map.values()]).toEqual([1, 2, 3]);
     assertNodeHeight(map.root);
   });
-  /*
   it('should correctly insert nodes from complex tree', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
     let input = Array.from({ length: 100 }, (_, i) => i);
-    input.forEach(v => map.set(v, v));
+    input.forEach(v => {
+      map.set(v, v);
+      assertNodeHeight(map.root);
+    });
     expect(map.size).toBe(input.length);
-    assertNodeHeight(map.root);
     expect([...map.values()]).toEqual(input);
   });
   it('should correctly insert nodes from very complex tree', () => {
@@ -45,6 +46,7 @@ describe('AVLSortedMap', () => {
     }
     expect(map.size).toBe(1000000);
   });
+  /*
   it('should correctly remove nodes from simple tree', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
     map.set(1, 1);
