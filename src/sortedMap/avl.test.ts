@@ -46,7 +46,6 @@ describe('AVLSortedMap', () => {
     }
     expect(map.size).toBe(1000000);
   });
-  /*
   it('should correctly remove nodes from simple tree', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
     map.set(1, 1);
@@ -76,5 +75,4 @@ describe('AVLSortedMap', () => {
       map.delete(i);
     }
   });
-  */
 });

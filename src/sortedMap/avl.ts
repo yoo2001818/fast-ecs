@@ -124,6 +124,64 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     return node;
   }
 
+  // In here, boolean means whether if the height has been increased in its
+  // child. This wouldn't happen if left node is set when right node is set, and
+  // vice versa.
+  _set(key: K, value: V, node: Node<K, V>): [boolean, Node<K, V>] {
+    // Descend down to the node...
+    const result = this.comparator(key, node.key);
+    if (result === 0) {
+      node.value = value;
+      return [false, node];
+    }
+    if (result > 0) {
+      // key > current.key
+      if (node.right != null) {
+        const result = this._set(key, value, node.right);
+        node.right = result[1];
+        if (result[0]) {
+          node.balanceFactor += 1;
+          const balanceResult = this._rebalance(node);
+          return [balanceResult.balanceFactor !== 0, balanceResult];
+        }
+        return [false, node];
+      } else {
+        node.right = new Node(key, value);
+        node.balanceFactor += 1;
+        this.size += 1;
+        return [node.left == null, node];
+      }
+    } else {
+      // key < current.key
+      if (node.left != null) {
+        const result = this._set(key, value, node.left);
+        node.left = result[1];
+        if (result[0]) {
+          node.balanceFactor -= 1;
+          const balanceResult = this._rebalance(node);
+          return [balanceResult.balanceFactor !== 0, balanceResult];
+        }
+        return [false, node];
+      } else {
+        node.left = new Node(key, value);
+        node.balanceFactor -= 1;
+        this.size += 1;
+        return [node.right == null, node];
+      }
+    }
+  }
+
+  set2(key: K, value: V): this {
+    if (this.root == null) {
+      this.root = new Node(key, value);
+      this.size += 1;
+      return this;
+    }
+    const result = this._set(key, value, this.root);
+    this.root = result[1];
+    return this;
+  }
+
   set(key: K, value: V): this {
     if (this.root == null) {
       this.root = new Node(key, value);
@@ -132,6 +190,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     }
     // Descend down to the created node...
     // right = true
+    let stack: [Node<K, V>, boolean][] = [];
     let depth = 0;
     {
       let current = this.root;
@@ -144,13 +203,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
           // key > current.key
           if (current.right != null) {
             current = current.right;
-            if (this._stack.length > depth) {
-              let item = this._stack[depth];
-              item[0] = current;
-              item[1] = true;
-            } else {
-              this._stack[depth] = [current, true];
-            }
+            stack[depth] = [current, true];
             depth += 1;
           } else {
             current.right = new Node(key, value);
@@ -162,13 +215,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
           // key < current.key
           if (current.left != null) {
             current = current.left;
-            if (this._stack.length > depth) {
-              let item = this._stack[depth];
-              item[0] = current;
-              item[1] = false;
-            } else {
-              this._stack[depth] = [current, false];
-            }
+            stack[depth] = [current, false];
             depth += 1;
           } else {
             current.left = new Node(key, value);
@@ -182,12 +229,10 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     // Then perform a retracing loop.
     while (depth > 0) {
       depth -= 1;
-      let item = this._stack[depth];
+      let item = stack[depth];
       let current = item[0];
       let dir = item[1];
-      // Allow gc
-      item[0] = null;
-      let parent = depth > 1 ? this._stack[depth - 1][0] : this.root;
+      let parent = depth > 0 ? stack[depth - 1][0] : this.root;
       const newCurrent = this._rebalance(current);
       if (dir) parent.right = newCurrent;
       else parent.left = newCurrent;
