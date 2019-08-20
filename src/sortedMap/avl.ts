@@ -61,6 +61,21 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   return left;
 }
 
+function rebalance<K, V>(node: Node<K, V>): Node<K, V> {
+  if (node.balanceFactor < -1) {
+    if (node.left != null && node.left.balanceFactor >= 1) {
+      node.left = leftRotate(node.left);
+    }
+    return rightRotate(node);
+  } else if (node.balanceFactor > 1) {
+    if (node.right != null && node.right.balanceFactor <= -1) {
+      node.right = rightRotate(node.right);
+    }
+    return leftRotate(node);
+  }
+  return node;
+}
+
 export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
   comparator: (a: K, b: K) => number;
   size: number = 0;
@@ -107,79 +122,6 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       }
     }
     return false;
-  }
-
-  _rebalance(node: Node<K, V>): Node<K, V> {
-    if (node.balanceFactor < -1) {
-      if (node.left != null && node.left.balanceFactor >= 1) {
-        node.left = leftRotate(node.left);
-      }
-      return rightRotate(node);
-    } else if (node.balanceFactor > 1) {
-      if (node.right != null && node.right.balanceFactor <= -1) {
-        node.right = rightRotate(node.right);
-      }
-      return leftRotate(node);
-    }
-    return node;
-  }
-
-  // In here, boolean means whether if the height has been increased in its
-  // child. This wouldn't happen if left node is set when right node is set, and
-  // vice versa.
-  _set(key: K, value: V, node: Node<K, V>): [boolean, Node<K, V>] {
-    // Descend down to the node...
-    const result = this.comparator(key, node.key);
-    if (result === 0) {
-      node.value = value;
-      return [false, node];
-    }
-    if (result > 0) {
-      // key > current.key
-      if (node.right != null) {
-        const result = this._set(key, value, node.right);
-        node.right = result[1];
-        if (result[0]) {
-          node.balanceFactor += 1;
-          const balanceResult = this._rebalance(node);
-          return [balanceResult.balanceFactor !== 0, balanceResult];
-        }
-        return [false, node];
-      } else {
-        node.right = new Node(key, value);
-        node.balanceFactor += 1;
-        this.size += 1;
-        return [node.left == null, node];
-      }
-    } else {
-      // key < current.key
-      if (node.left != null) {
-        const result = this._set(key, value, node.left);
-        node.left = result[1];
-        if (result[0]) {
-          node.balanceFactor -= 1;
-          const balanceResult = this._rebalance(node);
-          return [balanceResult.balanceFactor !== 0, balanceResult];
-        }
-        return [false, node];
-      } else {
-        node.left = new Node(key, value);
-        node.balanceFactor -= 1;
-        this.size += 1;
-        return [node.right == null, node];
-      }
-    }
-  }
-
-  set2(key: K, value: V): this {
-    if (this.root == null) {
-      this.root = new Node(key, value);
-      this.size += 1;
-      return this;
-    }
-    const result = this._set(key, value, this.root);
-    this.root = result[1];
-    return this;
   }
 
   set(key: K, value: V): this {
@@ -233,7 +175,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       let current = item[0];
       let dir = item[1];
       let parent = depth > 0 ? stack[depth - 1][0] : this.root;
-      const newCurrent = this._rebalance(current);
+      const newCurrent = rebalance(current);
       if (dir) parent.right = newCurrent;
       else parent.left = newCurrent;
       if (newCurrent.balanceFactor === 0) {
@@ -241,7 +183,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       }
       parent.balanceFactor += dir ? 1 : -1;
     }
-    this.root = this._rebalance(this.root);
+    this.root = rebalance(this.root);
     return this;
   }
 
@@ -253,7 +195,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     if (result[0]) {
       node.left = result[1];
       node.balanceFactor += 1;
-      const balanceResult = this._rebalance(node);
+      const balanceResult = rebalance(node);
       // If balance factor becomes 0, it means the height decreasing has
       // actually occurred and propagation is necessary to the parent.
       return [balanceResult.balanceFactor === 0, balanceResult, result[2]];
@@ -286,7 +228,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
         newNode.right = deleteResult[1];
         newNode.balanceFactor = node.balanceFactor -
           (deleteResult[0] ? 1 : 0);
-        const balanceResult = this._rebalance(newNode);
+        const balanceResult = rebalance(newNode);
         // If balance factor becomes 0, it means the height decreasing has
         // actually occurred and propagation is necessary to the parent.
         return [true, balanceResult.balanceFactor === 0, balanceResult];
@@ -307,7 +249,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
           //  1  3         1
           return [result[0], false, node];
         }
-        const balanceResult = this._rebalance(node);
+        const balanceResult = rebalance(node);
         // If balance factor becomes 0, it means the height decreasing has
         // actually occurred and propagation is necessary to the parent.
         return [result[0], balanceResult.balanceFactor === 0, balanceResult];
@@ -330,7 +272,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
           //  1  3            3
           return [result[0], false, node];
         }
-        const balanceResult = this._rebalance(node);
+        const balanceResult = rebalance(node);
         // If balance factor becomes 0, it means the height decreasing has
         // actually occurred and propagation is necessary to the parent.
         return [result[0], balanceResult.balanceFactor === 0, balanceResult];
@@ -342,9 +284,40 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
 
   delete(key: K): boolean {
     if (this.root == null) return false;
-    const result = this._delete(key, this.root);
-    this.root = result[2];
-    return result[0];
+    // Descend down to the created node...
+    // right = true
+    let stack: [Node<K, V>, boolean][] = [];
+    let depth = 0;
+    {
+      let current: Node<K, V> = this.root;
+      while (true) {
+        const result = this.comparator(key, current.key);
+        if (result === 0) {
+          // Node is found - replace the node and retrace.
+          this.size -= 1;
+          if (current.left == null && current.right == null) {
+            // If the node is empty, simply delete the node.
+          } else if (current.left == null) {
+            // If only one side is present, use that node.
+          } else if (current.right == null) {
+            
+          } else {
+            // If both nodes are present, remove leftmost node from right node.
+            // This means that we have to traverse down to the bottom of the
+            // tree.
+
+          }
+        } else if (result > 0) {
+          // key > current.key
+          if (current.right == null) return false;
+          current = current.right;
+        } else {
+          // key < current.key
+          if (current.left == null) return false;
+          current = current.left;
+        }
+      }
+    }
   }
 
   clear(): void {
