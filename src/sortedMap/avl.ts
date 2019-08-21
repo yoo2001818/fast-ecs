@@ -289,35 +289,91 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     let stack: [Node<K, V>, boolean][] = [];
     let depth = 0;
     {
+      let parent: Node<K, V> = null;
+      // right = true
+      let parentDir: boolean = false;
       let current: Node<K, V> = this.root;
       while (true) {
+        console.log(current);
         const result = this.comparator(key, current.key);
         if (result === 0) {
           // Node is found - replace the node and retrace.
           this.size -= 1;
+          let newTarget: Node<K, V>;
           if (current.left == null && current.right == null) {
             // If the node is empty, simply delete the node.
+            newTarget = null;
           } else if (current.left == null) {
             // If only one side is present, use that node.
+            newTarget = current.right;
           } else if (current.right == null) {
-            
+            newTarget = current.left;
           } else {
             // If both nodes are present, remove leftmost node from right node.
             // This means that we have to traverse down to the bottom of the
             // tree.
-
+            newTarget = current.right;
+            stack[depth] = [current, true];
+            depth += 1;
+            let currentDepth = depth;
+            while (newTarget.left != null) {
+              newTarget = newTarget.left;
+              stack[depth] = [newTarget, false];
+              depth += 1;
+            }
+            newTarget.left = current.left;
+            newTarget.right = depth === currentDepth ? null : current.right;
+            newTarget.balanceFactor = current.balanceFactor - 1;
           }
+          // Set the parent object right now; it's hard to do this in retracing
+          // loop.
+          if (parent != null) {
+            if (parentDir) {
+              parent.right = newTarget;
+              parent.balanceFactor -= 1;
+            } else {
+              parent.left = newTarget;
+              parent.balanceFactor += 1;
+            }
+          } else {
+            this.root = newTarget;
+          }
+          depth -= 1;
+          break;
         } else if (result > 0) {
           // key > current.key
           if (current.right == null) return false;
+          parent = current;
           current = current.right;
+          stack[depth] = [current, true];
+          depth += 1;
         } else {
           // key < current.key
           if (current.left == null) return false;
+          parent = current;
           current = current.left;
+          stack[depth] = [current, false];
+          depth += 1;
         }
       }
     }
+    // Then perform a retracing loop.
+    while (depth > 0) {
+      depth -= 1;
+      let item = stack[depth];
+      let current = item[0];
+      let dir = item[1];
+      let parent = depth > 0 ? stack[depth - 1][0] : this.root;
+      const newCurrent = rebalance(current);
+      if (dir) parent.right = newCurrent;
+      else parent.left = newCurrent;
+      if (newCurrent.balanceFactor === 0) {
+        return true;
+      }
+      parent.balanceFactor += dir ? 1 : -1;
+    }
+    this.root = rebalance(this.root);
+    return true;
   }
 
   clear(): void {
