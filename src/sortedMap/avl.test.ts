@@ -59,6 +59,7 @@ describe('AVLSortedMap', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
     let input = Array.from({ length: 100 }, (_, i) => i);
     input.forEach(v => map.set(v, v));
+    input.reverse();
     input.forEach((v, i) => {
       map.delete(v);
       assertNodeHeight(map.root);

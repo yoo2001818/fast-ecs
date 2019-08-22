@@ -294,7 +294,6 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       let parentDir: boolean = false;
       let current: Node<K, V> = this.root;
       while (true) {
-        console.log(current);
         const result = this.comparator(key, current.key);
         if (result === 0) {
           // Node is found - replace the node and retrace.
@@ -367,12 +366,14 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       const newCurrent = rebalance(current);
       if (dir) parent.right = newCurrent;
       else parent.left = newCurrent;
-      if (newCurrent.balanceFactor === 0) {
+      if (newCurrent.balanceFactor !== 0) {
         return true;
       }
-      parent.balanceFactor += dir ? 1 : -1;
+      parent.balanceFactor += dir ? -1 : 1;
     }
-    this.root = rebalance(this.root);
+    if (this.root != null) {
+      this.root = rebalance(this.root);
+    }
     return true;
   }
 
