@@ -302,15 +302,20 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
           if (current.left == null && current.right == null) {
             // If the node is empty, simply delete the node.
             newTarget = null;
+            console.log('deleting itself');
           } else if (current.left == null) {
             // If only one side is present, use that node.
             newTarget = current.right;
+            console.log('using right');
           } else if (current.right == null) {
             newTarget = current.left;
+            console.log('using left');
           } else {
             // If both nodes are present, remove leftmost node from right node.
             // This means that we have to traverse down to the bottom of the
             // tree.
+            console.log('descending');
+            console.log(current);
             newTarget = current.right;
             stack[depth] = [current, true];
             depth += 1;
@@ -322,7 +327,8 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
             }
             newTarget.left = current.left;
             newTarget.right = depth === currentDepth ? null : current.right;
-            newTarget.balanceFactor = current.balanceFactor - 1;
+            newTarget.balanceFactor = current.balanceFactor;
+            stack[currentDepth - 1] = [newTarget, true];
           }
           // Set the parent object right now; it's hard to do this in retracing
           // loop.
@@ -356,6 +362,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
         }
       }
     }
+    console.log(stack.map((v) => [v[0].key, v[1]]));
     // Then perform a retracing loop.
     while (depth > 0) {
       depth -= 1;
