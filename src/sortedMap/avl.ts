@@ -350,6 +350,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
           if (current.right == null) return false;
           parent = current;
           current = current.right;
+          parentDir = true;
           stack[depth] = [current, true];
           depth += 1;
         } else {
@@ -357,6 +358,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
           if (current.left == null) return false;
           parent = current;
           current = current.left;
+          parentDir = false;
           stack[depth] = [current, false];
           depth += 1;
         }
