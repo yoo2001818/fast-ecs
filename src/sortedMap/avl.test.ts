@@ -46,6 +46,7 @@ describe('AVLSortedMap', () => {
     }
     expect(map.size).toBe(1000000);
   });
+  /*
   it('should correctly remove nodes from simple tree', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
     map.set(1, 1);
@@ -55,6 +56,7 @@ describe('AVLSortedMap', () => {
     expect(map.size).toBe(2);
     expect([...map.values()]).toEqual([1, 3]);
   });
+  */
   it('should correctly remove nodes from complex tree', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
     let input = Array.from({ length: 10 }, (_, i) => i);
@@ -68,6 +70,7 @@ describe('AVLSortedMap', () => {
     input.forEach((v, i) => {
       console.log(v);
       map.delete(v);
+      console.log(JSON.stringify(map.root, null, 2));
       assertNodeHeight(map.root);
       expect(map.size).toBe(input.length - i - 1);
     });

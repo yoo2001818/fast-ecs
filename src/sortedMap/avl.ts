@@ -286,6 +286,9 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     if (this.root == null) return false;
     // Descend down to the created node...
     // right = true
+    // Since the stack doesn't store root node, we need to store root node
+    // separately - root node can be changed while running this.
+    let rootNode: Node<K, V> = this.root;
     let stack: [Node<K, V>, boolean][] = [];
     let depth = 0;
     {
@@ -314,21 +317,36 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
             // If both nodes are present, remove leftmost node from right node.
             // This means that we have to traverse down to the bottom of the
             // tree.
-            console.log('descending');
+            //
+            //     a      base depth             d
+            //    / \                           / \
+            //   f   b    newTarget            f   b
+            //      / \                           / \
+            //     c   e  newTarget  --->        c   e
+            //    /
+            //   d        newTarget
+            console.log('descending', depth);
             console.log(current);
+            let baseDepth = depth - 1;
             newTarget = current.right;
-            stack[depth] = [current, true];
+            stack[depth] = [newTarget, true];
             depth += 1;
-            let currentDepth = depth;
             while (newTarget.left != null) {
               newTarget = newTarget.left;
               stack[depth] = [newTarget, false];
               depth += 1;
             }
             newTarget.left = current.left;
-            newTarget.right = depth === currentDepth ? null : current.right;
+            newTarget.right = depth === baseDepth + 2 ? null : current.right;
             newTarget.balanceFactor = current.balanceFactor;
-            stack[currentDepth - 1] = [newTarget, true];
+            // Height has changed; remove the bottom node and replace pointer
+            // in baseDepth node.
+            // Removing the bottom node will be done at the bottom?
+            if (baseDepth > 0) {
+              stack[baseDepth][0] = newTarget;
+            } else {
+              rootNode = newTarget;
+            }
           }
           // Set the parent object right now; it's hard to do this in retracing
           // loop.
@@ -349,16 +367,16 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
           // key > current.key
           if (current.right == null) return false;
           parent = current;
-          current = current.right;
           parentDir = true;
+          current = current.right;
           stack[depth] = [current, true];
           depth += 1;
         } else {
           // key < current.key
           if (current.left == null) return false;
           parent = current;
-          current = current.left;
           parentDir = false;
+          current = current.left;
           stack[depth] = [current, false];
           depth += 1;
         }
@@ -380,8 +398,8 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       }
       parent.balanceFactor += dir ? -1 : 1;
     }
-    if (this.root != null) {
-      this.root = rebalance(this.root);
+    if (rootNode != null) {
+      this.root = rebalance(rootNode);
     }
     return true;
   }
