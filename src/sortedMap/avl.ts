@@ -323,18 +323,25 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
             //   f   b    newTarget            f   b
             //      / \                           / \
             //     c   e  newTarget  --->        c   e
-            //    /
-            //   d        newTarget
+            //    /                             /
+            //   d        newTarget            g
+            //    \
+            //     g
             console.log('descending', depth);
             console.log(current);
             let baseDepth = depth - 1;
+            let newTargetParent = current;
             newTarget = current.right;
             stack[depth] = [newTarget, true];
             depth += 1;
             while (newTarget.left != null) {
+              newTargetParent = newTarget;
               newTarget = newTarget.left;
               stack[depth] = [newTarget, false];
               depth += 1;
+            }
+            if (depth > baseDepth + 2) {
+              newTargetParent.left = newTarget.right;
             }
             newTarget.left = current.left;
             newTarget.right = depth === baseDepth + 2 ? null : current.right;
@@ -347,6 +354,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
             } else {
               rootNode = newTarget;
             }
+            console.log(newTarget);
           }
           // Set the parent object right now; it's hard to do this in retracing
           // loop.
@@ -382,7 +390,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
         }
       }
     }
-    console.log(stack.map((v) => [v[0].key, v[1]]));
+    console.log(stack.slice(0, depth).map((v) => [v[0].key, v[1]]));
     // Then perform a retracing loop.
     while (depth > 0) {
       depth -= 1;
