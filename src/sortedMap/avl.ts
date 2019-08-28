@@ -292,9 +292,6 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     let stack: [Node<K, V>, boolean][] = [];
     let depth = 0;
     {
-      let parent: Node<K, V> = null;
-      // right = true
-      let parentDir: boolean = false;
       let current: Node<K, V> = this.root;
       while (true) {
         const result = this.comparator(key, current.key);
@@ -356,34 +353,21 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
             }
             console.log(newTarget);
           }
-          // Set the parent object right now; it's hard to do this in retracing
-          // loop.
-          if (parent != null) {
-            if (parentDir) {
-              parent.right = newTarget;
-              parent.balanceFactor -= 1;
-            } else {
-              parent.left = newTarget;
-              parent.balanceFactor += 1;
-            }
+          if (depth === 0) {
+            rootNode = newTarget;
           } else {
-            this.root = newTarget;
+            stack[depth - 1][0] = newTarget;
           }
-          depth -= 1;
           break;
         } else if (result > 0) {
           // key > current.key
           if (current.right == null) return false;
-          parent = current;
-          parentDir = true;
           current = current.right;
           stack[depth] = [current, true];
           depth += 1;
         } else {
           // key < current.key
           if (current.left == null) return false;
-          parent = current;
-          parentDir = false;
           current = current.left;
           stack[depth] = [current, false];
           depth += 1;
@@ -398,10 +382,10 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       let current = item[0];
       let dir = item[1];
       let parent = depth > 0 ? stack[depth - 1][0] : this.root;
-      const newCurrent = rebalance(current);
+      const newCurrent = current != null ? rebalance(current) : null;
       if (dir) parent.right = newCurrent;
       else parent.left = newCurrent;
-      if (newCurrent.balanceFactor !== 0) {
+      if (newCurrent != null && newCurrent.balanceFactor !== 0) {
         return true;
       }
       parent.balanceFactor += dir ? -1 : 1;
