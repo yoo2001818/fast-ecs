@@ -61,13 +61,15 @@ describe('AVLSortedMap', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
     let input = Array.from({ length: 10 }, (_, i) => i);
     input.forEach(v => map.set(v, v));
+    /*
     for (let i = 0; i < input.length - 1; i += 1) {
       let j = (Math.random() * (input.length - 1 - i) | 0) + i;
       let prev = input[i];
       input[i] = input[j];
       input[j] = prev;
     }
-    input.forEach((v, i) => {
+    */
+    [5].forEach((v, i) => {
       console.log(v);
       map.delete(v);
       console.log(JSON.stringify(map.root, null, 2));

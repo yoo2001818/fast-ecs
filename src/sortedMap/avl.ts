@@ -342,8 +342,10 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
             } else {
               depth -= 1;
             }
+            // Copy left value to here...
+            newTarget.left = current.left;
             // Then, replace the base depth's node to current node.
-            stack[baseDepth][0] = newTarget;
+            depth = baseDepth + 1;
           }
           if (depth === 0) {
             rootNode = newTarget;
@@ -366,7 +368,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
         }
       }
     }
-    console.log(stack.slice(0, depth).map((v) => [v[0].key, v[1]]));
+    console.log(stack.slice(0, depth).map((v) => [v[0] && v[0].key, v[1]]));
     // Then perform a retracing loop.
     while (depth > 0) {
       depth -= 1;
