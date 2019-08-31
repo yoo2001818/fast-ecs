@@ -326,7 +326,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
             //     g
             console.log('descending', depth);
             console.log(current);
-            let baseDepth = depth - 1;
+            let baseDepth = depth;
             newTarget = current.right;
             stack[depth] = [newTarget, true];
             depth += 1;
@@ -337,15 +337,18 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
             }
             // Since new target will be deleted, replace the target with new 
             // target's right.
-            if (newTarget.right != null) {
-              stack[depth - 1][0] = newTarget.right;
-            } else {
-              depth -= 1;
-            }
+            // If new target's right is null, it'll be set to null.
+            stack[depth - 1][0] = newTarget.right;
             // Copy left value to here...
             newTarget.left = current.left;
+            newTarget.balanceFactor = current.balanceFactor;
             // Then, replace the base depth's node to current node.
-            depth = baseDepth + 1;
+            if (baseDepth === 0) {
+              rootNode = newTarget;
+            } else {
+              stack[baseDepth - 1][0] = newTarget;
+            }
+            break;
           }
           if (depth === 0) {
             rootNode = newTarget;
