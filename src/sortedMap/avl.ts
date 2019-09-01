@@ -65,6 +65,7 @@ function rebalance<K, V>(node: Node<K, V>): Node<K, V> {
   if (node.balanceFactor < -1) {
     if (node.left != null && node.left.balanceFactor >= 1) {
       node.left = leftRotate(node.left);
+      console.log(node.left);
     }
     return rightRotate(node);
   } else if (node.balanceFactor > 1) {
@@ -378,16 +379,22 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       let item = stack[depth];
       let current = item[0];
       let dir = item[1];
-      let parent = depth > 0 ? stack[depth - 1][0] : this.root;
+      let parent = depth > 0 ? stack[depth - 1][0] : rootNode;
       const newCurrent = current != null ? rebalance(current) : null;
+      console.log('rebalance', newCurrent);
       if (dir) parent.right = newCurrent;
       else parent.left = newCurrent;
       if (newCurrent != null && newCurrent.balanceFactor !== 0) {
+        console.log('exit!');
         return true;
       }
       parent.balanceFactor += dir ? -1 : 1;
     }
     if (rootNode != null) {
+      console.log('rebalance root', rootNode);
+      if (Math.abs(rootNode.balanceFactor) === 2) {
+        console.log('before', JSON.stringify(rootNode, null, 2));
+      }
       this.root = rebalance(rootNode);
     }
     return true;

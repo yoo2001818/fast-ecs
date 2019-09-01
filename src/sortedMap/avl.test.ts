@@ -69,12 +69,12 @@ describe('AVLSortedMap', () => {
       input[j] = prev;
     }
     */
-    [1, 7, 8, 2, 5].forEach((v, i) => {
+    [2, 6, 1, 8].forEach((v, i) => {
       console.log(v);
       map.delete(v);
       console.log(JSON.stringify(map.root, null, 2));
-      assertNodeHeight(map.root);
       expect(map.size).toBe(input.length - i - 1);
+      assertNodeHeight(map.root);
     });
   });
   /*
