@@ -33,7 +33,7 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   // balance factor of X = B(X)
   // B(node) = B(node) - 1 - B(right)
   // B(right) = B(right) - 1
-  node.balanceFactor = node.balanceFactor - 1 - right.balanceFactor;
+  node.balanceFactor = node.balanceFactor - 1 - Math.abs(right.balanceFactor);
   right.balanceFactor = right.balanceFactor - 1;
   return right;
 }
@@ -56,7 +56,7 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   // balance factor of X = B(X)
   // B(node) = B(node) + 1 - B(left)
   // B(left) = B(left) + 1
-  node.balanceFactor = node.balanceFactor + 1 - left.balanceFactor;
+  node.balanceFactor = node.balanceFactor + 1 - Math.abs(left.balanceFactor);
   left.balanceFactor = left.balanceFactor + 1;
   return left;
 }
