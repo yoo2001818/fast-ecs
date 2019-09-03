@@ -52,12 +52,26 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   // If left balance factor is >0, it means t23 is longer
   // If node balance factor is >0, or 0, it means t4 is longer
   //
-  // Considering this, we can build a formula to recalculate balance factor:
   // balance factor of X = B(X)
-  // B(node) = B(node) + 1 - B(left)
-  // B(left) = B(left) + 1
-  node.balanceFactor = node.balanceFactor + 1 - Math.abs(left.balanceFactor);
-  left.balanceFactor = left.balanceFactor + 1;
+  // height of X = H(X)
+  // (next) balance factor of X = Bn(X)
+  // (next) height of X = Hn(X)
+  // Right rotation changes node height like this:
+  // Hn(N.left) = H(N.left) - 1
+  // Hn(N.right) = H(N.right)
+  // Hn(L.left) = H(L.left)
+  // Hn(L.right) = H(L.right) + H(N.right)
+  // ... B(X) = H(X.right) - H(X.left)
+  // Therefore...
+  // Bn(N) = Hn(N.right) - Hn(N.left) =
+  //   H(N.right) - H(N.left) + 1 =
+  //   B(N) + 1
+  // Bn(L) = Hn(L.right) - Hn(L.left) =
+  //   H(L.right) + H(N.right) - H(L.left) =
+  //   B(L) + H(N.right) =
+  //   B(L) + B(N) + 1, 1 <= H(N.right) <= 2
+  node.balanceFactor = node.balanceFactor + 1;
+  left.balanceFactor = left.balanceFactor + node.balanceFactor + 1;
   return left;
 }
 
