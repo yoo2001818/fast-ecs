@@ -39,6 +39,7 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
 }
 
 function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
+  console.log('right', node);
   //         node                   left
   //        /    \                 /    \
   //      left   t4    -->        t1   node
@@ -70,8 +71,10 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   //   H(L.right) + H(N.right) - H(L.left) =
   //   B(L) + H(N.right) =
   //   B(L) + B(N) + 1, 1 <= H(N.right) <= 2
-  node.balanceFactor = node.balanceFactor + 1;
-  left.balanceFactor = left.balanceFactor + node.balanceFactor + 1;
+  console.log('prev', left.balanceFactor, node.balanceFactor);
+  node.balanceFactor = node.balanceFactor + left.balanceFactor + 1;
+  left.balanceFactor = left.balanceFactor + 1;
+  console.log('next', left.balanceFactor, node.balanceFactor);
   return left;
 }
 
