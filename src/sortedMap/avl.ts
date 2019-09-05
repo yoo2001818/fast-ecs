@@ -25,16 +25,39 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = right.left;
   right.left = node;
   node.right = t23;
-  // If right balance factor is >0, it means t4 is longer
-  // If right balance factor is <0, it means t23 is longer
-  // If node balance factor is <0, or 0, it means t1 is longer
-  //
-  // Considering this, we can build a formula to recalculate balance factor:
   // balance factor of X = B(X)
-  // B(node) = B(node) - 1 - B(right)
-  // B(right) = B(right) - 1
+  // height of X = H(X)
+  // (next) balance factor of X = Bn(X)
+  // (next) height of X = Hn(X)
+  // Left rotation changes node height like this:
+  // Hn(N.left) = H(N.left)
+  // Hn(N.right) = H(R.left)
+  // Hn(R.left) = max(H(N.left), H(R.left)) + 1
+  // Hn(R.right) = H(R.right)
+  // ... B(X) = H(X.right) - H(X.left)
+  // Therefore,
+  // Bn(N) = Hn(N.right) - Hn(N.left) =
+  //   H(R.left) - H(N.left).
+  // Bn(R) = Hn(R.right) - Hn(R.left) =
+  //   H(R.right) - max(H(N.left), H(R.left)) - 1
+  // 
+  // Since balance factor is relative, we have to think relatively too -
+  // N.left = t1
+  // N.right = R
+  // R.left = t23
+  // R.right = t4
+  // B(N) = H(R) - H(t1)
+  // B(R) = H(t4) - t(23)
+  // Bn(N) = H(t23) - H(t1)
+  // Bn(R) = H(t4) - max(H(t1), H(t23)) - 1
+  // 
+  // B(N) would be larger than 0 if H(R) is higher than H(t1) (which would be
+  // always the case though...)
+  // 
+  console.log('left prev', node.balanceFactor, right.balanceFactor);
   node.balanceFactor = node.balanceFactor - 1 - Math.abs(right.balanceFactor);
   right.balanceFactor = right.balanceFactor - 1;
+  console.log('left next', node.balanceFactor, right.balanceFactor);
   return right;
 }
 
