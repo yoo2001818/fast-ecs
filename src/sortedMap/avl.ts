@@ -47,12 +47,18 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   // R.left = t23
   // R.right = t4
   // B(N) = H(R) - H(t1)
-  // B(R) = H(t4) - t(23)
+  // B(R) = H(t4) - H(t23)
   // Bn(N) = H(t23) - H(t1)
   // Bn(R) = H(t4) - max(H(t1), H(t23)) - 1
   // 
   // B(N) would be larger than 0 if H(R) is higher than H(t1) (which would be
   // always the case though...)
+  // 
+  // Relatively, H(N) would decrease by 1 because right node is not there
+  // anymore. Therefore, if H(t23) > H(t4), B(N) -= 1. (if t4 is longer, it
+  // won't have any effect.) Otherwise, t4 would be longer, and height
+  // difference will be B(R). In that case, it's hard to determine...
+  // 
   // 
   console.log('left prev', node.balanceFactor, right.balanceFactor);
   node.balanceFactor = node.balanceFactor - 1 - Math.abs(right.balanceFactor);
