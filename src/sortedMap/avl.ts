@@ -87,23 +87,21 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   // Bn(R) = B(R) - 1 (if Bn(N) >= 0)
   // Otherwise, H(t1) becomes dominant, and we need to update to reflect its
   // height.
-  // Bn(R) = B(R) + Bn(N) - 1 (if Bn(N) <= 0)
+  // Bn(R) = H(t4) - H(t23) - (H(t23) - H(t1)) - 1
+  //   = B(R) - Bn(N) - 1 (if Bn(N) <= 0)
   // 
   // Therefore....
   // Bn(N) = B(N) - max(0, B(R)) - 1
-  // Bn(R) = B(R) + max(0, Bn(N)) - 1
+  // Bn(R) = B(R) - min(0, Bn(N)) - 1
   // 
-  console.log('left prev', node.balanceFactor, right.balanceFactor);
   node.balanceFactor = node.balanceFactor -
     Math.max(0, right.balanceFactor) - 1;
-  right.balanceFactor = right.balanceFactor +
-    Math.max(0, node.balanceFactor) - 1;
-  console.log('left next', node.balanceFactor, right.balanceFactor);
+  right.balanceFactor = right.balanceFactor -
+    Math.min(0, node.balanceFactor) - 1;
   return right;
 }
 
 function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
-  console.log('right', node);
   //         node                   left
   //        /    \                 /    \
   //      left   t4    -->        t1   node
@@ -113,32 +111,24 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = left.right;
   left.right = node;
   node.left = t23;
-  // If left balance factor is <0, it means t1 is longer
-  // If left balance factor is >0, it means t23 is longer
-  // If node balance factor is >0, or 0, it means t4 is longer
-  //
-  // balance factor of X = B(X)
-  // height of X = H(X)
-  // (next) balance factor of X = Bn(X)
-  // (next) height of X = Hn(X)
-  // Right rotation changes node height like this:
-  // Hn(N.left) = H(N.left) - 1
-  // Hn(N.right) = H(N.right)
-  // Hn(L.left) = H(L.left)
-  // Hn(L.right) = H(L.right) + H(N.right)
-  // ... B(X) = H(X.right) - H(X.left)
-  // Therefore...
-  // Bn(N) = Hn(N.right) - Hn(N.left) =
-  //   H(N.right) - H(N.left) + 1 =
-  //   B(N) + 1
-  // Bn(L) = Hn(L.right) - Hn(L.left) =
-  //   H(L.right) + H(N.right) - H(L.left) =
-  //   B(L) + H(N.right) =
-  //   B(L) + B(N) + 1, 1 <= H(N.right) <= 2
-  console.log('prev', left.balanceFactor, node.balanceFactor);
-  node.balanceFactor = node.balanceFactor + left.balanceFactor + 1;
-  left.balanceFactor = left.balanceFactor + 1;
-  console.log('next', left.balanceFactor, node.balanceFactor);
+  // B(L) = H(t23) - H(t1)
+  // B(N) = H(t4) - H(L)
+  //   = H(t4) - max(H(t1), H(t23)) - 1
+  // Bn(N) = H(t4) - H(t23)
+  //   = | B(N) + 1 (if H(t23) > H(t1), therefore B(L) > 0)
+  //     | B(N) + H(t1) - H(t23) + 1 (if B(L) <= 0)
+  //       = B(N) - B(L) + 1
+  //   = B(N) - min(0, B(L)) + 1
+  // Bn(L) = Hn(N) - H(t1)
+  //   = B(L) - H(t23) + Hn(N) + 1
+  //   = | B(L) - H(t23) + H(t4) + 2 (if H(t4) > H(t23), therefore Bn(N) > 0)
+  //       = B(L) + Bn(N) + 1
+  //     | B(L) + 1 (if Bn(N) <= 0)
+  //   = B(L) - max(0, Bn(N)) + 1
+  node.balanceFactor = node.balanceFactor -
+    Math.min(0, left.balanceFactor) + 1;
+  left.balanceFactor = left.balanceFactor +
+    Math.max(0, node.balanceFactor) + 1;
   return left;
 }
 
@@ -146,7 +136,6 @@ function rebalance<K, V>(node: Node<K, V>): Node<K, V> {
   if (node.balanceFactor < -1) {
     if (node.left != null && node.left.balanceFactor >= 1) {
       node.left = leftRotate(node.left);
-      console.log(node.left);
     }
     return rightRotate(node);
   } else if (node.balanceFactor > 1) {
@@ -384,14 +373,14 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
           if (current.left == null && current.right == null) {
             // If the node is empty, simply delete the node.
             newTarget = null;
-            console.log('deleting itself');
+            // console.log('deleting itself');
           } else if (current.left == null) {
             // If only one side is present, use that node.
             newTarget = current.right;
-            console.log('using right');
+            // console.log('using right');
           } else if (current.right == null) {
             newTarget = current.left;
-            console.log('using left');
+            // console.log('using left');
           } else {
             // If both nodes are present, remove leftmost node from right node.
             // This means that we have to traverse down to the bottom of the
@@ -406,8 +395,8 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
             //   d        newTarget            g
             //    \
             //     g
-            console.log('descending', depth);
-            console.log(current);
+            // console.log('descending', depth);
+            // console.log(current);
             let baseDepth = depth;
             newTarget = current.right;
             stack[depth] = [newTarget, true];
@@ -453,8 +442,9 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
         }
       }
     }
-    console.log(stack.slice(0, depth).map((v) => [v[0] && v[0].key, v[1]]));
+    // console.log(stack.slice(0, depth).map((v) => [v[0] && v[0].key, v[1]]));
     // Then perform a retracing loop.
+    let propagateStopped = false;
     while (depth > 0) {
       depth -= 1;
       let item = stack[depth];
@@ -462,20 +452,17 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       let dir = item[1];
       let parent = depth > 0 ? stack[depth - 1][0] : rootNode;
       const newCurrent = current != null ? rebalance(current) : null;
-      console.log('rebalance', newCurrent);
+      // console.log('rebalance', newCurrent);
       if (dir) parent.right = newCurrent;
       else parent.left = newCurrent;
       if (newCurrent != null && newCurrent.balanceFactor !== 0) {
-        console.log('exit!');
-        return true;
+        // console.log('exit!');
+        propagateStopped = true;
       }
-      parent.balanceFactor += dir ? -1 : 1;
+      if (!propagateStopped) parent.balanceFactor += dir ? -1 : 1;
     }
     if (rootNode != null) {
-      console.log('rebalance root', rootNode);
-      if (Math.abs(rootNode.balanceFactor) === 2) {
-        console.log('before', JSON.stringify(rootNode, null, 2));
-      }
+      // console.log('rebalance root', rootNode);
       this.root = rebalance(rootNode);
     }
     return true;

@@ -31,15 +31,21 @@ describe('AVLSortedMap', () => {
   });
   it('should correctly insert nodes from complex tree', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
-    let input = Array.from({ length: 10 }, (_, i) => i);
+    let sortedInput = Array.from({ length: 10 }, (_, i) => i);
+    let input = sortedInput.slice();
+    for (let i = 0; i < input.length - 1; i += 1) {
+      let j = (Math.random() * (input.length - 1 - i) | 0) + i;
+      let prev = input[i];
+      input[i] = input[j];
+      input[j] = prev;
+    }
     input.forEach(v => {
       map.set(v, v);
       assertNodeHeight(map.root);
     });
     expect(map.size).toBe(input.length);
-    expect([...map.values()]).toEqual(input);
+    expect([...map.values()]).toEqual(sortedInput);
   });
-  /*
   it('should correctly insert nodes from very complex tree', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
     for (let i = 0; i < 1000000; i += 1) {
@@ -47,7 +53,6 @@ describe('AVLSortedMap', () => {
     }
     expect(map.size).toBe(1000000);
   });
-  /*
   it('should correctly remove nodes from simple tree', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
     map.set(1, 1);
@@ -57,28 +62,22 @@ describe('AVLSortedMap', () => {
     expect(map.size).toBe(2);
     expect([...map.values()]).toEqual([1, 3]);
   });
-  */
   it('should correctly remove nodes from complex tree', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
     let input = Array.from({ length: 10 }, (_, i) => i);
     input.forEach(v => map.set(v, v));
-    /*
     for (let i = 0; i < input.length - 1; i += 1) {
       let j = (Math.random() * (input.length - 1 - i) | 0) + i;
       let prev = input[i];
       input[i] = input[j];
       input[j] = prev;
     }
-    */
-    [2, 6, 1, 8].forEach((v, i) => {
-      console.log(v);
+    input.forEach((v, i) => {
       map.delete(v);
-      console.log(JSON.stringify(map.root, null, 2));
       expect(map.size).toBe(input.length - i - 1);
       assertNodeHeight(map.root);
     });
   });
-  /*
   it('should correctly remove nodes from very complex tree', () => {
     let map = new AVLSortedMap<number, number>((a, b) => a - b);
     for (let i = 0; i < 1000000; i += 1) {
@@ -88,5 +87,4 @@ describe('AVLSortedMap', () => {
       map.delete(i);
     }
   });
-  */
 });
