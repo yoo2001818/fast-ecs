@@ -55,14 +55,49 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   // always the case though...)
   // 
   // Relatively, H(N) would decrease by 1 because right node is not there
-  // anymore. Therefore, if H(t23) > H(t4), B(N) -= 1. (if t4 is longer, it
+  // anymore. Therefore, if B(R) < 0, B(N) -= 1. (if t4 is longer, it
   // won't have any effect.) Otherwise, t4 would be longer, and height
-  // difference will be B(R). In that case, it's hard to determine...
+  // difference will be B(R). In that case, we actually have to consider
+  // difference between B(N) and B(R), and consider H(R) as H(t4) + 1.
+  //
+  // B(N) = max(H(t4), H(t23)) + 1 - H(t1)
+  //   = H(t4) + 1 - H(t1) (if B(R) >= 0)
+  // B(R) = H(t4) - H(t23)
   // 
+  // Difference between H(t4) and H(t23) can be derived from B(R), and
+  // B(N) stores height of H(t4). Using this, we can derive difference between
+  // H(t23) and node, and set the actual balance factor.
+  // 
+  // Bn(N) = B(N) - B(R) - 1.
+  //  = B(N) - max(0, B(R)) - 1 in all cases.
+  // 
+  // How about B(R)? R's left is N now, and we need to calculate the difference
+  // between H(N) and H(t23).
+  // 
+  // Bn(R) = H(t4) - Hn(N)
+  //   = H(t4) - max(H(t1), H(t23)) - 1.
+  // 
+  // Since height of t1, t23, t4 doesn't change, we can use previously
+  // calculated Bn(N) to derive this.
+  // Bn(N) = H(t23) - H(t1)
+  // 
+  // B(R) = H(t4) - H(t23), therefore like B(N), other node's balance factor
+  // only matters if H(t1) becomes heavier than the other one. 
+  //
+  // Bn(R) = B(R) - 1 (if Bn(N) >= 0)
+  // Otherwise, H(t1) becomes dominant, and we need to update to reflect its
+  // height.
+  // Bn(R) = B(R) + Bn(N) - 1 (if Bn(N) <= 0)
+  // 
+  // Therefore....
+  // Bn(N) = B(N) - max(0, B(R)) - 1
+  // Bn(R) = B(R) + max(0, Bn(N)) - 1
   // 
   console.log('left prev', node.balanceFactor, right.balanceFactor);
-  node.balanceFactor = node.balanceFactor - 1 - Math.abs(right.balanceFactor);
-  right.balanceFactor = right.balanceFactor - 1;
+  node.balanceFactor = node.balanceFactor -
+    Math.max(0, right.balanceFactor) - 1;
+  right.balanceFactor = right.balanceFactor +
+    Math.max(0, node.balanceFactor) - 1;
   console.log('left next', node.balanceFactor, right.balanceFactor);
   return right;
 }
