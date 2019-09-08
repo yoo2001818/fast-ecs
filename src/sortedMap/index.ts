@@ -7,9 +7,21 @@ export interface SortedMap<K, V> extends Iterable<[K, V]>, Map<K, V> {
   delete(key: K): boolean,
   clear(): void,
 
-  entries(): IterableIterator<[K, V]>,
-  keys(): IterableIterator<K>,
-  values(): IterableIterator<V>,
+  entries(
+    start?: K,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<[K, V]>,
+  keys(
+    start?: K,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<K>,
+  values(
+    start?: K,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<V>,
   forEach(
     callback: (value: V, key: K, map: SortedMap<K, V>) => void,
     thisArg?: any,

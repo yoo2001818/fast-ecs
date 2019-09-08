@@ -378,9 +378,24 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
     this.size = 0;
   }
 
-  *entries(): IterableIterator<[K, V]> {
+  *entries(
+    start?: K,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<[K, V]> {
     // Stack only stores reentry nodes.
     let stack: Node<K, V>[] = [];
+    if (start !== undefined) {
+      // Try to locate the target node.
+      // If locating 1 - 
+      // here      here if after is true
+      // v         v
+      // 1 1 1 1 1 2 2 2 
+      // In the ordered set, they must reside in same parent, therefore we just
+      // have to go to leftmost same value node when the node is found.
+      // If after is specified, go to rightmost same value + 1 when the node
+      // is found?
+    }
     // For that reason, we need to descend down to the leftmost node.
     {
       let current = this.root;
@@ -403,16 +418,24 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       }
     }
   }
-  *keys(): IterableIterator<K> {
-    let entries = this.entries();
+  *keys(
+    start?: K,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<K> {
+    let entries = this.entries(start, after, reversed);
     while (true) {
       let { done, value } = entries.next();
       if (done) break;
       yield value[0];
     }
   }
-  *values(): IterableIterator<V> {
-    let entries = this.entries();
+  *values(
+    start?: K,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<V> {
+    let entries = this.entries(start, after, reversed);
     while (true) {
       let { done, value } = entries.next();
       if (done) break;
