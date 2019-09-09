@@ -1,4 +1,5 @@
 import { SortedMap } from './index';
+import { reverse } from 'dns';
 
 export class Node<K, V> {
   key: K;
@@ -385,35 +386,77 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
   ): IterableIterator<[K, V]> {
     // Stack only stores reentry nodes.
     let stack: Node<K, V>[] = [];
+    let skipNext = after;
     if (start !== undefined) {
       // Try to locate the target node.
-      // If locating 1 - 
-      // here      here if after is true
-      // v         v
-      // 1 1 1 1 1 2 2 2 
-      // In the ordered set, they must reside in same parent, therefore we just
-      // have to go to leftmost same value node when the node is found.
       // If after is specified, go to rightmost same value + 1 when the node
       // is found?
-    }
-    // For that reason, we need to descend down to the leftmost node.
-    {
+      // Traverse down to the node until the end is met
       let current = this.root;
-      stack.push(current);
-      while (current.left != null) {
-        stack.push(current.left);
-        current = current.left;
+      while (current != null) {
+        const result = this.comparator(start, current.key);
+        if (result === 0) {
+          // Start from here...
+          stack.push(current);
+          break;
+        } else if (result > 0) {
+          // key > current.key
+          // When going right, don't push stack.
+          if (reversed) {
+            stack.push(current);
+          }
+          current = current.right;
+        } else {
+          // key < current.key
+          if (!reversed) {
+            // Push to stack when going left...
+            stack.push(current);
+          }
+          current = current.left;
+        }
       }
-    }
-    while (stack.length > 0) {
-      let node = stack.pop();
-      yield [node.key, node.value];
-      if (node.right != null) {
-        let current = node.right;
+    } else {
+      // For that reason, we need to descend down to the leftmost node.
+      if (!reversed) {
+        let current = this.root;
         stack.push(current);
         while (current.left != null) {
           stack.push(current.left);
           current = current.left;
+        }
+      } else {
+        let current = this.root;
+        stack.push(current);
+        while (current.right != null) {
+          stack.push(current.right);
+          current = current.right;
+        }
+      }
+    }
+    while (stack.length > 0) {
+      let node = stack.pop();
+      if (!skipNext) {
+        yield [node.key, node.value];
+      } else {
+        skipNext = false;
+      }
+      if (!reversed) {
+        if (node.right != null) {
+          let current = node.right;
+          stack.push(current);
+          while (current.left != null) {
+            stack.push(current.left);
+            current = current.left;
+          }
+        }
+      } else {
+        if (node.left != null) {
+          let current = node.left;
+          stack.push(current);
+          while (current.right != null) {
+            stack.push(current.right);
+            current = current.right;
+          }
         }
       }
     }
