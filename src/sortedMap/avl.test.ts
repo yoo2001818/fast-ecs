@@ -87,4 +87,14 @@ describe('AVLSortedMap', () => {
       map.delete(i);
     }
   });
+  it('should correctly traverse the tree', () => {
+    let map = new AVLSortedMap<number, number>((a, b) => a - b);
+    for (let i = 0; i < 10; i += 1) {
+      map.set(i, i);
+    }
+    expect([...map.keys(5)]).toEqual([5, 6, 7, 8, 9]);
+    expect([...map.keys(5, true)]).toEqual([6, 7, 8, 9]);
+    expect([...map.keys(5, false, true)]).toEqual([5, 4, 3, 2, 1, 0]);
+    expect([...map.keys(5, true, true)]).toEqual([4, 3, 2, 1, 0]);
+  });
 });
