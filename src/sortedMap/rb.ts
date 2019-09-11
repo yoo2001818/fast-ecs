@@ -5,13 +5,13 @@ export class Node<K, V> {
   value: V;
   left: Node<K, V> | null;
   right: Node<K, V> | null;
-  balanceFactor: number;
+  isRed: boolean;
   constructor(key: K, value: V) {
     this.key = key;
     this.value = value;
     this.left = null;
     this.right = null;
-    this.balanceFactor = 0;
+    this.isRed = false;
   }
 }
 
@@ -25,79 +25,6 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = right.left;
   right.left = node;
   node.right = t23;
-  // balance factor of X = B(X)
-  // height of X = H(X)
-  // (next) balance factor of X = Bn(X)
-  // (next) height of X = Hn(X)
-  // Left rotation changes node height like this:
-  // Hn(N.left) = H(N.left)
-  // Hn(N.right) = H(R.left)
-  // Hn(R.left) = max(H(N.left), H(R.left)) + 1
-  // Hn(R.right) = H(R.right)
-  // ... B(X) = H(X.right) - H(X.left)
-  // Therefore,
-  // Bn(N) = Hn(N.right) - Hn(N.left) =
-  //   H(R.left) - H(N.left).
-  // Bn(R) = Hn(R.right) - Hn(R.left) =
-  //   H(R.right) - max(H(N.left), H(R.left)) - 1
-  // 
-  // Since balance factor is relative, we have to think relatively too -
-  // N.left = t1
-  // N.right = R
-  // R.left = t23
-  // R.right = t4
-  // B(N) = H(R) - H(t1)
-  // B(R) = H(t4) - H(t23)
-  // Bn(N) = H(t23) - H(t1)
-  // Bn(R) = H(t4) - max(H(t1), H(t23)) - 1
-  // 
-  // B(N) would be larger than 0 if H(R) is higher than H(t1) (which would be
-  // always the case though...)
-  // 
-  // Relatively, H(N) would decrease by 1 because right node is not there
-  // anymore. Therefore, if B(R) < 0, B(N) -= 1. (if t4 is longer, it
-  // won't have any effect.) Otherwise, t4 would be longer, and height
-  // difference will be B(R). In that case, we actually have to consider
-  // difference between B(N) and B(R), and consider H(R) as H(t4) + 1.
-  //
-  // B(N) = max(H(t4), H(t23)) + 1 - H(t1)
-  //   = H(t4) + 1 - H(t1) (if B(R) >= 0)
-  // B(R) = H(t4) - H(t23)
-  // 
-  // Difference between H(t4) and H(t23) can be derived from B(R), and
-  // B(N) stores height of H(t4). Using this, we can derive difference between
-  // H(t23) and node, and set the actual balance factor.
-  // 
-  // Bn(N) = B(N) - B(R) - 1.
-  //  = B(N) - max(0, B(R)) - 1 in all cases.
-  // 
-  // How about B(R)? R's left is N now, and we need to calculate the difference
-  // between H(N) and H(t23).
-  // 
-  // Bn(R) = H(t4) - Hn(N)
-  //   = H(t4) - max(H(t1), H(t23)) - 1.
-  // 
-  // Since height of t1, t23, t4 doesn't change, we can use previously
-  // calculated Bn(N) to derive this.
-  // Bn(N) = H(t23) - H(t1)
-  // 
-  // B(R) = H(t4) - H(t23), therefore like B(N), other node's balance factor
-  // only matters if H(t1) becomes heavier than the other one. 
-  //
-  // Bn(R) = B(R) - 1 (if Bn(N) >= 0)
-  // Otherwise, H(t1) becomes dominant, and we need to update to reflect its
-  // height.
-  // Bn(R) = H(t4) - H(t23) - (H(t23) - H(t1)) - 1
-  //   = B(R) - Bn(N) - 1 (if Bn(N) <= 0)
-  // 
-  // Therefore....
-  // Bn(N) = B(N) - max(0, B(R)) - 1
-  // Bn(R) = B(R) - min(0, Bn(N)) - 1
-  // 
-  node.balanceFactor = node.balanceFactor -
-    Math.max(0, right.balanceFactor) - 1;
-  right.balanceFactor = right.balanceFactor -
-    Math.min(0, node.balanceFactor) - 1;
   return right;
 }
 
@@ -111,43 +38,10 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = left.right;
   left.right = node;
   node.left = t23;
-  // B(L) = H(t23) - H(t1)
-  // B(N) = H(t4) - H(L)
-  //   = H(t4) - max(H(t1), H(t23)) - 1
-  // Bn(N) = H(t4) - H(t23)
-  //   = | B(N) + 1 (if H(t23) > H(t1), therefore B(L) > 0)
-  //     | B(N) + H(t1) - H(t23) + 1 (if B(L) <= 0)
-  //       = B(N) - B(L) + 1
-  //   = B(N) - min(0, B(L)) + 1
-  // Bn(L) = Hn(N) - H(t1)
-  //   = B(L) - H(t23) + Hn(N) + 1
-  //   = | B(L) - H(t23) + H(t4) + 2 (if H(t4) > H(t23), therefore Bn(N) > 0)
-  //       = B(L) + Bn(N) + 1
-  //     | B(L) + 1 (if Bn(N) <= 0)
-  //   = B(L) - max(0, Bn(N)) + 1
-  node.balanceFactor = node.balanceFactor -
-    Math.min(0, left.balanceFactor) + 1;
-  left.balanceFactor = left.balanceFactor +
-    Math.max(0, node.balanceFactor) + 1;
   return left;
 }
 
-function rebalance<K, V>(node: Node<K, V>): Node<K, V> {
-  if (node.balanceFactor < -1) {
-    if (node.left != null && node.left.balanceFactor >= 1) {
-      node.left = leftRotate(node.left);
-    }
-    return rightRotate(node);
-  } else if (node.balanceFactor > 1) {
-    if (node.right != null && node.right.balanceFactor <= -1) {
-      node.right = rightRotate(node.right);
-    }
-    return leftRotate(node);
-  }
-  return node;
-}
-
-export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
+export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
   comparator: (a: K, b: K) => number;
   size: number = 0;
   root: Node<K, V> | null = null;
@@ -198,6 +92,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
   set(key: K, value: V): this {
     if (this.root == null) {
       this.root = new Node(key, value);
+      // If root is null, it's trivial - The root node is black and it's done.
       this.size += 1;
       return this;
     }
@@ -220,7 +115,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
             depth += 1;
           } else {
             current.right = new Node(key, value);
-            current.balanceFactor += 1;
+            current.isRed = true;
             this.size += 1;
             break;
           }
@@ -232,7 +127,7 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
             depth += 1;
           } else {
             current.left = new Node(key, value);
-            current.balanceFactor -= 1;
+            current.isRed = true;
             this.size += 1;
             break;
           }
@@ -246,15 +141,15 @@ export default class AVLSortedMap<K, V> implements SortedMap<K, V> {
       let current = item[0];
       let dir = item[1];
       let parent = depth > 0 ? stack[depth - 1][0] : this.root;
-      const newCurrent = rebalance(current);
+      const newCurrent = current;
+      // 1. If parent's color is black, do nothing as it's a valid tree.
+      // 2. If grandparent's other child (i.e. uncle) is black,
+      //    set parent, uncle to red, and set grandparent to red.
       if (dir) parent.right = newCurrent;
       else parent.left = newCurrent;
-      if (newCurrent.balanceFactor === 0) {
-        return this;
-      }
-      parent.balanceFactor += dir ? 1 : -1;
     }
-    this.root = rebalance(this.root);
+    // Set root node to black if it's not black.
+    this.root = this.root;
     return this;
   }
 
