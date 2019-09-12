@@ -115,7 +115,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
             depth += 1;
           } else {
             current.right = new Node(key, value);
-            current.isRed = true;
+            current.right.isRed = true;
             this.size += 1;
             break;
           }
@@ -127,7 +127,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
             depth += 1;
           } else {
             current.left = new Node(key, value);
-            current.isRed = true;
+            current.left.isRed = true;
             this.size += 1;
             break;
           }
@@ -135,137 +135,85 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       }
     }
     // Then perform a retracing loop.
+    depth -= 1;
     while (depth > 0) {
-      depth -= 1;
       let item = stack[depth];
       let current = item[0];
       let dir = item[1];
       let parent = depth > 0 ? stack[depth - 1][0] : this.root;
-      const newCurrent = current;
-      // 1. If parent's color is black, do nothing as it's a valid tree.
-      // 2. If grandparent's other child (i.e. uncle) is black,
-      //    set parent, uncle to red, and set grandparent to red.
-      if (dir) parent.right = newCurrent;
-      else parent.left = newCurrent;
+      // If node's color is black, do nothing as it's a valid tree.
+      // If node's color is red, property 4 is violated - if a node is red,
+      //   its children must be all black.
+      // Read the parent's other child (i.e. sibling) node's color.
+      // 1. If sibling node is red, both sibling and current node's color can be
+      //    repainted to black, and parent's color can be red.
+      //    However, grandparent's color can be red too - to resolve
+      //    this, repeat the validation for the grandparent.
+      // 2. If sibling node is black, we have to rotate the tree to make node 
+      //    to become parent (rotate right if the node is on left side,
+      //    and vice versa.) However, this does not work if the child node 
+      //    is already occupying that side. If that's the case, rotate
+      //    child node / current node to make it linear.
+      //    Then, rotate current node / parent node to fit current node into
+      //    parent's position, and repaint current node to black,
+      //    parent node to red. Since the current node's color is black, no more
+      //    validation is necessary.
+      
+      // Do nothing if the node's color is black.
+      if (!current.isRed) break;
+
+      let sibling = dir ? parent.left : parent.right;
+      if (sibling.isRed) {
+        // Repaint the node, and decrease the depth (to validate grandparent)
+        current.isRed = false;
+        sibling.isRed = false;
+        parent.isRed = true;
+        depth -= 2;
+      } else {
+        // If the node is using left side, and its right side is occupied,
+        // rotate right. (and vice versa)
+        if (!dir && current.right != null) {
+          current = rightRotate(current);
+          parent.left = current;
+        } else if (dir && current.left != null) {
+          current = leftRotate(current);
+          parent.right = current;
+        }
+        // Swap the node and parent's offset by rotating left / right.
+        current.isRed = false;
+        parent.isRed = true;
+        if (!dir) {
+          parent = rightRotate(parent);
+        } else {
+          parent = leftRotate(parent);
+        }
+        // Ascend the stack and try to set the parent's parent...
+        if (depth > 0) {
+          let parentDir = stack[depth - 1][1];
+          let grandparent;
+          if (depth > 1) {
+            grandparent = stack[depth - 2][0];
+          } else {
+            grandparent = this.root;
+          }
+          if (parentDir) {
+            grandparent.right = parent;
+          } else {
+            grandparent.left = parent;
+          }
+        } else {
+          this.root = parent;
+        }
+        break;
+      }
     }
     // Set root node to black if it's not black.
-    this.root = this.root;
+    if (this.root.isRed) this.root.isRed = false;
     return this;
   }
 
   delete(key: K): boolean {
-    if (this.root == null) return false;
-    // Descend down to the created node...
-    // right = true
-    // Since the stack doesn't store root node, we need to store root node
-    // separately - root node can be changed while running this.
-    let rootNode: Node<K, V> = this.root;
-    let stack: [Node<K, V>, boolean][] = [];
-    let depth = 0;
-    {
-      let current: Node<K, V> = this.root;
-      while (true) {
-        const result = this.comparator(key, current.key);
-        if (result === 0) {
-          // Node is found - replace the node and retrace.
-          this.size -= 1;
-          let newTarget: Node<K, V>;
-          if (current.left == null && current.right == null) {
-            // If the node is empty, simply delete the node.
-            newTarget = null;
-            // console.log('deleting itself');
-          } else if (current.left == null) {
-            // If only one side is present, use that node.
-            newTarget = current.right;
-            // console.log('using right');
-          } else if (current.right == null) {
-            newTarget = current.left;
-            // console.log('using left');
-          } else {
-            // If both nodes are present, remove leftmost node from right node.
-            // This means that we have to traverse down to the bottom of the
-            // tree.
-            //
-            //     a      base depth             d
-            //    / \                           / \
-            //   f   b    newTarget            f   b
-            //      / \                           / \
-            //     c   e  newTarget  --->        c   e
-            //    /                             /
-            //   d        newTarget            g
-            //    \
-            //     g
-            // console.log('descending', depth);
-            // console.log(current);
-            let baseDepth = depth;
-            newTarget = current.right;
-            stack[depth] = [newTarget, true];
-            depth += 1;
-            while (newTarget.left != null) {
-              newTarget = newTarget.left;
-              stack[depth] = [newTarget, false];
-              depth += 1;
-            }
-            // Since new target will be deleted, replace the target with new 
-            // target's right.
-            // If new target's right is null, it'll be set to null.
-            stack[depth - 1][0] = newTarget.right;
-            // Copy left value to here...
-            newTarget.left = current.left;
-            newTarget.balanceFactor = current.balanceFactor;
-            // Then, replace the base depth's node to current node.
-            if (baseDepth === 0) {
-              rootNode = newTarget;
-            } else {
-              stack[baseDepth - 1][0] = newTarget;
-            }
-            break;
-          }
-          if (depth === 0) {
-            rootNode = newTarget;
-          } else {
-            stack[depth - 1][0] = newTarget;
-          }
-          break;
-        } else if (result > 0) {
-          // key > current.key
-          if (current.right == null) return false;
-          current = current.right;
-          stack[depth] = [current, true];
-          depth += 1;
-        } else {
-          // key < current.key
-          if (current.left == null) return false;
-          current = current.left;
-          stack[depth] = [current, false];
-          depth += 1;
-        }
-      }
-    }
-    // console.log(stack.slice(0, depth).map((v) => [v[0] && v[0].key, v[1]]));
-    // Then perform a retracing loop.
-    let propagateStopped = false;
-    while (depth > 0) {
-      depth -= 1;
-      let item = stack[depth];
-      let current = item[0];
-      let dir = item[1];
-      let parent = depth > 0 ? stack[depth - 1][0] : rootNode;
-      const newCurrent = current != null ? rebalance(current) : null;
-      // console.log('rebalance', newCurrent);
-      if (dir) parent.right = newCurrent;
-      else parent.left = newCurrent;
-      if (newCurrent != null && newCurrent.balanceFactor !== 0) {
-        // console.log('exit!');
-        propagateStopped = true;
-      }
-      if (!propagateStopped) parent.balanceFactor += dir ? -1 : 1;
-    }
-    if (rootNode != null) {
-      // console.log('rebalance root', rootNode);
-      this.root = rebalance(rootNode);
-    }
-    return true;
+    throw new Error('Not implemented');
   }
 
   clear(): void {
