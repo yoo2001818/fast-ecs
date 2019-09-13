@@ -99,6 +99,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     // Descend down to the created node...
     // right = true
     let stack: [Node<K, V>, boolean][] = [];
+    let prevDir = false;
     let depth = 0;
     {
       let current = this.root;
@@ -117,6 +118,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
             current.right = new Node(key, value);
             current.right.isRed = true;
             this.size += 1;
+            prevDir = true;
             break;
           }
         } else if (result < 0) {
@@ -129,6 +131,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
             current.left = new Node(key, value);
             current.left.isRed = true;
             this.size += 1;
+            prevDir = false;
             break;
           }
         }
@@ -136,11 +139,13 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     }
     // Then perform a retracing loop.
     depth -= 1;
-    while (depth > 0) {
+    while (depth >= 0) {
       let item = stack[depth];
       let current = item[0];
       let dir = item[1];
-      let parent = depth > 0 ? stack[depth - 1][0] : this.root;
+      let parentItem = depth > 0 ? stack[depth - 1] : null;
+      let parent = depth > 0 ? parentItem[0] : this.root;
+      let parentDir = depth > 0 ? parentItem[1] : false;
       // If node's color is black, do nothing as it's a valid tree.
       // If node's color is red, property 4 is violated - if a node is red,
       //   its children must be all black.
@@ -163,20 +168,21 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       if (!current.isRed) break;
 
       let sibling = dir ? parent.left : parent.right;
-      if (sibling.isRed) {
+      if (sibling != null && sibling.isRed) {
         // Repaint the node, and decrease the depth (to validate grandparent)
         current.isRed = false;
         sibling.isRed = false;
         parent.isRed = true;
         depth -= 2;
+        prevDir = parentDir;
       } else {
         // If the node is using left side, and its right side is occupied,
         // rotate right. (and vice versa)
-        if (!dir && current.right != null) {
-          current = rightRotate(current);
-          parent.left = current;
-        } else if (dir && current.left != null) {
+        if (!dir && prevDir) {
           current = leftRotate(current);
+          parent.left = current;
+        } else if (dir && !prevDir) {
+          current = rightRotate(current);
           parent.right = current;
         }
         // Swap the node and parent's offset by rotating left / right.
@@ -189,7 +195,6 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
         }
         // Ascend the stack and try to set the parent's parent...
         if (depth > 0) {
-          let parentDir = stack[depth - 1][1];
           let grandparent;
           if (depth > 1) {
             grandparent = stack[depth - 2][0];
