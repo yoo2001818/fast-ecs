@@ -150,10 +150,9 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       //   its children must be all black.
       // Read the grandparent's other child (i.e. uncle)'s color.
       let grandparent = parent.parent;
-      const uncle = grandparent.left === parent ?
-        grandparent.right :
-        grandparent.left;
-      if (uncle.isRed) {
+      const isParentRight = grandparent.right === parent;
+      const uncle = isParentRight ? grandparent.left : grandparent.right;
+      if (uncle != null && uncle.isRed) {
         // If uncle node is red, both uncle and parent node's color can be
         // repainted to black, and grandparent's color can be red. However,
         // grandparent's parent's color can be red too - to resolve this,
@@ -171,90 +170,38 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
         // Then, rotate parent node and grandparent node. Repaint parent node
         // to black, grandparent to red. Since top of the tree (= parent node)
         // is black now, no more validation is necessary.
-        if (grandparent.left === parent && parent.right === current) {
-          parent = rightRotate(parent);
-          grandparent.left = parent;
-        } else if (grandparent.right === parent && parent.left === current) {
+        if (!isParentRight && parent.right === current) {
           parent = leftRotate(parent);
+          grandparent.left = parent;
+        } else if (isParentRight && parent.left === current) {
+          parent = rightRotate(parent);
           grandparent.right = parent;
         }
-      }
-    }
-    depth -= 1;
-    while (depth > 0) {
-      let item = stack[depth];
-      let current = item[0];
-      let dir = item[1];
-      let parent = depth > 0 ? stack[depth - 1][0] : this.root;
-      // If node's color is black, do nothing as it's a valid tree.
-      // If node's color is red, property 4 is violated - if a node is red,
-      //   its children must be all black.
-      // Read the parent's other child (i.e. sibling) node's color.
-      // 1. If sibling node is red, both sibling and current node's color can be
-      //    repainted to black, and parent's color can be red.
-      //    However, grandparent's color can be red too - to resolve
-      //    this, repeat the validation for the grandparent.
-      // 2. If sibling node is black, we have to rotate the tree to make node 
-      //    to become parent (rotate right if the node is on left side,
-      //    and vice versa.) However, this does not work if the child node 
-      //    is already occupying that side. If that's the case, rotate
-      //    child node / current node to make it linear.
-      //    Then, rotate current node / parent node to fit current node into
-      //    parent's position, and repaint current node to black,
-      //    parent node to red. Since the current node's color is black, no more
-      //    validation is necessary.
-      
-      // Do nothing if the node's color is black.
-      if (!current.isRed) break;
-
-      let sibling = dir ? parent.left : parent.right;
-      if (sibling.isRed) {
-        // Repaint the node, and decrease the depth (to validate grandparent)
-        current.isRed = false;
-        sibling.isRed = false;
-        parent.isRed = true;
-        depth -= 2;
-      } else {
-        // If the node is using left side, and its right side is occupied,
-        // rotate right. (and vice versa)
-        if (!dir && current.right != null) {
-          current = rightRotate(current);
-          parent.left = current;
-        } else if (dir && current.left != null) {
-          current = leftRotate(current);
-          parent.right = current;
-        }
-        // Swap the node and parent's offset by rotating left / right.
-        current.isRed = false;
-        parent.isRed = true;
-        if (!dir) {
-          parent = rightRotate(parent);
-        } else {
-          parent = leftRotate(parent);
-        }
-        // Ascend the stack and try to set the parent's parent...
-        if (depth > 0) {
-          let parentDir = stack[depth - 1][1];
-          let grandparent;
-          if (depth > 1) {
-            grandparent = stack[depth - 2][0];
+        parent.isRed = false;
+        grandparent.isRed = true;
+        let greatgrandparent = grandparent.parent;
+        if (!isParentRight) {
+          const result = rightRotate(grandparent);
+          if (greatgrandparent == null) {
+            this.root = result;
+          } else if (greatgrandparent.left === grandparent) {
+            greatgrandparent.left = result;
           } else {
-            grandparent = this.root;
-          }
-          if (parentDir) {
-            grandparent.right = parent;
-          } else {
-            grandparent.left = parent;
+            greatgrandparent.right = result;
           }
         } else {
-          this.root = parent;
+          const result = leftRotate(grandparent);
+          if (greatgrandparent == null) {
+            this.root = result;
+          } else if (greatgrandparent.left === grandparent) {
+            greatgrandparent.left = result;
+          } else {
+            greatgrandparent.right = result;
+          }
         }
-        break;
+        return;
       }
     }
-    // Set root node to black if it's not black.
-    if (this.root.isRed) this.root.isRed = false;
-    return this;
   }
 
   delete(key: K): boolean {
