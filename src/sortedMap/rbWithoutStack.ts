@@ -1,0 +1,390 @@
+import { SortedMap } from './index';
+
+export class Node<K, V> {
+  key: K;
+  value: V;
+  parent: Node<K, V> | null;
+  left: Node<K, V> | null;
+  right: Node<K, V> | null;
+  isRed: boolean;
+  constructor(key: K, value: V) {
+    this.key = key;
+    this.value = value;
+    this.parent = null;
+    this.left = null;
+    this.right = null;
+    this.isRed = false;
+  }
+}
+
+function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
+  //     node                          right
+  //    /    \                        /     \
+  //   t1   right      -->          node    t4
+  //       /     \                 /    \
+  //      t23    t4               t1    t23
+  let right = node.right;
+  let t23 = right.left;
+  right.left = node;
+  node.right = t23;
+  right.parent = node.parent;
+  node.parent = right;
+  return right;
+}
+
+function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
+  //         node                   left
+  //        /    \                 /    \
+  //      left   t4    -->        t1   node
+  //     /    \                       /    \
+  //    t1    t23                   t23    t4
+  let left = node.left;
+  let t23 = left.right;
+  left.right = node;
+  node.left = t23;
+  left.parent = node.parent;
+  node.parent = left;
+  return left;
+}
+
+export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
+  comparator: (a: K, b: K) => number;
+  size: number = 0;
+  root: Node<K, V> | null = null;
+
+  constructor(comparator: (a: K, b: K) => number) {
+    this.comparator = comparator;
+ }
+
+  get(key: K): V | undefined {
+    if (this.root == null) {
+      return undefined;
+    }
+    // Traverse down to the node until the end is met
+    let current = this.root;
+    while (current != null) {
+      const result = this.comparator(key, current.key);
+      if (result === 0) return current.value;
+      if (result > 0) {
+        // key > current.key
+        current = current.right;
+      } else {
+        // key < current.key
+        current = current.left;
+      }
+    }
+    return undefined;
+  }
+
+  has(key: K): boolean {
+    if (this.root == null) {
+      return false;
+    }
+    // Traverse down to the node until the end is met
+    let current = this.root;
+    while (current != null) {
+      const result = this.comparator(key, current.key);
+      if (result === 0) return true;
+      if (result > 0) {
+        current = current.right;
+      } else {
+        current = current.left;
+      }
+    }
+    return false;
+  }
+
+  set(key: K, value: V): this {
+    if (this.root == null) {
+      this.root = new Node(key, value);
+      // If root is null, it's trivial - The root node is black and it's done.
+      this.size += 1;
+      return this;
+    }
+    // Descend down to the created node...
+    let current = this.root;
+    while (true) {
+      const result = this.comparator(key, current.key);
+      if (result === 0) {
+        current.value = value;
+        return this;
+      } else if (result > 0) {
+        // key > current.key
+        if (current.right != null) {
+          current = current.right;
+        } else {
+          const newNode = new Node(key, value);
+          newNode.isRed = true;
+          newNode.parent = current;
+          current.right = newNode;
+          current = newNode;
+          this.size += 1;
+          break;
+        }
+      } else if (result < 0) {
+        // key < current.key
+        if (current.left != null) {
+          current = current.left;
+        } else {
+          const newNode = new Node(key, value);
+          newNode.isRed = true;
+          newNode.parent = current;
+          current.left = newNode;
+          this.size += 1;
+          break;
+        }
+      }
+    }
+    // Then perform a retracing loop.
+    while (true) {
+      // If the node is the root node, set itself to black and it's done.
+      let parent = current.parent;
+      if (parent == null) {
+        current.isRed = false;
+        this.root = current;
+        return;
+      }
+      // If parent's color is black, do nothing as it's a valid tree.
+      if (!parent.isRed) return;
+      // If parent's color is red, property 4 is violated - if a node is red,
+      //   its children must be all black.
+      // Read the grandparent's other child (i.e. uncle)'s color.
+      let grandparent = parent.parent;
+      const uncle = grandparent.left === parent ?
+        grandparent.right :
+        grandparent.left;
+      if (uncle.isRed) {
+        // If uncle node is red, both uncle and parent node's color can be
+        // repainted to black, and grandparent's color can be red. However,
+        // grandparent's parent's color can be red too - to resolve this,
+        // we repeat the validation for the grandparent.
+        uncle.isRed = false;
+        parent.isRed = false;
+        grandparent.isRed = true;
+        current = grandparent;
+      } else {
+        // If uncle node is black, we have to rotate the tree to make parent to
+        // be in grandparent's position (rotate right if the parent is on left
+        // side, and vice versa) However, this doesn't work if the current node
+        // is already occupying that side. If that's the case, rotate current
+        // and parent node to make it linear.
+        // Then, rotate parent node and grandparent node. Repaint parent node
+        // to black, grandparent to red. Since top of the tree (= parent node)
+        // is black now, no more validation is necessary.
+        if (grandparent.left === parent && parent.right === current) {
+          parent = rightRotate(parent);
+          grandparent.left = parent;
+        } else if (grandparent.right === parent && parent.left === current) {
+          parent = leftRotate(parent);
+          grandparent.right = parent;
+        }
+      }
+    }
+    depth -= 1;
+    while (depth > 0) {
+      let item = stack[depth];
+      let current = item[0];
+      let dir = item[1];
+      let parent = depth > 0 ? stack[depth - 1][0] : this.root;
+      // If node's color is black, do nothing as it's a valid tree.
+      // If node's color is red, property 4 is violated - if a node is red,
+      //   its children must be all black.
+      // Read the parent's other child (i.e. sibling) node's color.
+      // 1. If sibling node is red, both sibling and current node's color can be
+      //    repainted to black, and parent's color can be red.
+      //    However, grandparent's color can be red too - to resolve
+      //    this, repeat the validation for the grandparent.
+      // 2. If sibling node is black, we have to rotate the tree to make node 
+      //    to become parent (rotate right if the node is on left side,
+      //    and vice versa.) However, this does not work if the child node 
+      //    is already occupying that side. If that's the case, rotate
+      //    child node / current node to make it linear.
+      //    Then, rotate current node / parent node to fit current node into
+      //    parent's position, and repaint current node to black,
+      //    parent node to red. Since the current node's color is black, no more
+      //    validation is necessary.
+      
+      // Do nothing if the node's color is black.
+      if (!current.isRed) break;
+
+      let sibling = dir ? parent.left : parent.right;
+      if (sibling.isRed) {
+        // Repaint the node, and decrease the depth (to validate grandparent)
+        current.isRed = false;
+        sibling.isRed = false;
+        parent.isRed = true;
+        depth -= 2;
+      } else {
+        // If the node is using left side, and its right side is occupied,
+        // rotate right. (and vice versa)
+        if (!dir && current.right != null) {
+          current = rightRotate(current);
+          parent.left = current;
+        } else if (dir && current.left != null) {
+          current = leftRotate(current);
+          parent.right = current;
+        }
+        // Swap the node and parent's offset by rotating left / right.
+        current.isRed = false;
+        parent.isRed = true;
+        if (!dir) {
+          parent = rightRotate(parent);
+        } else {
+          parent = leftRotate(parent);
+        }
+        // Ascend the stack and try to set the parent's parent...
+        if (depth > 0) {
+          let parentDir = stack[depth - 1][1];
+          let grandparent;
+          if (depth > 1) {
+            grandparent = stack[depth - 2][0];
+          } else {
+            grandparent = this.root;
+          }
+          if (parentDir) {
+            grandparent.right = parent;
+          } else {
+            grandparent.left = parent;
+          }
+        } else {
+          this.root = parent;
+        }
+        break;
+      }
+    }
+    // Set root node to black if it's not black.
+    if (this.root.isRed) this.root.isRed = false;
+    return this;
+  }
+
+  delete(key: K): boolean {
+    throw new Error('Not implemented');
+  }
+
+  clear(): void {
+    this.root = null;
+    this.size = 0;
+  }
+
+  *entries(
+    start?: K,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<[K, V]> {
+    // Stack only stores reentry nodes.
+    let stack: Node<K, V>[] = [];
+    let skipNext = after;
+    if (start !== undefined) {
+      // Try to locate the target node.
+      // If after is specified, go to rightmost same value + 1 when the node
+      // is found?
+      // Traverse down to the node until the end is met
+      let current = this.root;
+      while (current != null) {
+        const result = this.comparator(start, current.key);
+        if (result === 0) {
+          // Start from here...
+          stack.push(current);
+          break;
+        } else if (result > 0) {
+          // key > current.key
+          // When going right, don't push stack.
+          if (reversed) {
+            stack.push(current);
+          }
+          current = current.right;
+        } else {
+          // key < current.key
+          if (!reversed) {
+            // Push to stack when going left...
+            stack.push(current);
+          }
+          current = current.left;
+        }
+      }
+    } else {
+      // For that reason, we need to descend down to the leftmost node.
+      if (!reversed) {
+        let current = this.root;
+        stack.push(current);
+        while (current.left != null) {
+          stack.push(current.left);
+          current = current.left;
+        }
+      } else {
+        let current = this.root;
+        stack.push(current);
+        while (current.right != null) {
+          stack.push(current.right);
+          current = current.right;
+        }
+      }
+    }
+    while (stack.length > 0) {
+      let node = stack.pop();
+      if (!skipNext) {
+        yield [node.key, node.value];
+      } else {
+        skipNext = false;
+      }
+      if (!reversed) {
+        if (node.right != null) {
+          let current = node.right;
+          stack.push(current);
+          while (current.left != null) {
+            stack.push(current.left);
+            current = current.left;
+          }
+        }
+      } else {
+        if (node.left != null) {
+          let current = node.left;
+          stack.push(current);
+          while (current.right != null) {
+            stack.push(current.right);
+            current = current.right;
+          }
+        }
+      }
+    }
+  }
+  *keys(
+    start?: K,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<K> {
+    let entries = this.entries(start, after, reversed);
+    while (true) {
+      let { done, value } = entries.next();
+      if (done) break;
+      yield value[0];
+    }
+  }
+  *values(
+    start?: K,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<V> {
+    let entries = this.entries(start, after, reversed);
+    while (true) {
+      let { done, value } = entries.next();
+      if (done) break;
+      yield value[1];
+    }
+  }
+  forEach(callback: (value: V, key: K, map: this) => void, thisArg?: any): void {
+    let entries = this.entries();
+    while (true) {
+      let { done, value } = entries.next();
+      if (done) break;
+      callback.call(thisArg, value[1], value[0], this);
+    }
+  }
+  [Symbol.iterator](): IterableIterator<[K, V]> {
+    return this.entries();
+  }
+  get [Symbol.toStringTag](): string {
+    return 'AVLSortedMap';
+  }
+
+}
