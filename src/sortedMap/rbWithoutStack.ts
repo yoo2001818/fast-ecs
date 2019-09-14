@@ -205,7 +205,52 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
   }
 
   delete(key: K): boolean {
-    throw new Error('Not implemented');
+    if (this.root == null) return false;
+    // Try to descend down to the target node first, then delete the node.
+    let current = this.root;
+    while (true) {
+      const result = this.comparator(key, current.key);
+      if (result === 0) {
+        // Target node is found.
+        break;
+      } else if (result > 0) {
+        // key > current.key
+        if (current.right != null) {
+          current = current.right;
+        } else {
+          return false;
+        }
+      } else if (result < 0) {
+        // key < current.key
+        if (current.left != null) {
+          current = current.left;
+        } else {
+          return false;
+        }
+      }
+    }
+    if (current.left == null && current.right == null) {
+      // If the node is empty, simply delete the node.
+    } else if (current.right == null) {
+      // If only one side is present, use that node.
+    } else if (current.left == null) {
+
+    } else {
+      // If both nodes are present, remove leftmost node from right node.
+      // This means that we have to traverse down to the bottom of the
+      // tree.
+      //
+      //     a      current                d
+      //    / \                           / \
+      //   f   b    replacement          f   b
+      //      / \                           / \
+      //     c   e  replacement -->        c   e
+      //    /                             /
+      //   d        replacement          g
+      //    \
+      //     g
+    }
+    return true;
   }
 
   clear(): void {
