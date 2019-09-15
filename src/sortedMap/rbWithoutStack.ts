@@ -207,6 +207,8 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
   delete(key: K): boolean {
     if (this.root == null) return false;
     // Try to descend down to the target node first, then delete the node.
+    let currentParent = null;
+    let currentDir = false;
     let current = this.root;
     while (true) {
       const result = this.comparator(key, current.key);
@@ -216,6 +218,8 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       } else if (result > 0) {
         // key > current.key
         if (current.right != null) {
+          currentParent = current;
+          currentDir = true;
           current = current.right;
         } else {
           return false;
@@ -223,19 +227,17 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       } else if (result < 0) {
         // key < current.key
         if (current.left != null) {
+          currentParent = current;
+          currentDir = false;
           current = current.left;
         } else {
           return false;
         }
       }
     }
-    if (current.left == null && current.right == null) {
-      // If the node is empty, simply delete the node.
-    } else if (current.right == null) {
-      // If only one side is present, use that node.
-    } else if (current.left == null) {
-
-    } else {
+    // In red black tree, 'null' is considered a child and therefore all
+    // deletion is considered two children deletion.
+    if (current.left != null && current.right != null) {
       // If both nodes are present, remove leftmost node from right node.
       // This means that we have to traverse down to the bottom of the
       // tree.
@@ -248,8 +250,56 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       //    /                             /
       //   d        replacement          g
       //    \
-      //     g
+      //     g      replacement's right
+      currentParent = current;
+      currentDir = true;
+      let replacement = current.right;
+      while (replacement.left != null) {
+        currentParent = current;
+        currentDir = false;
+        replacement = replacement.left;
+      }
+      // Copy replacement's contents into current node.
+      current.key = replacement.key;
+      current.value = replacement.value;
+      // Then, try to run deletion algorithm for the replacement node (to
+      // properly set replacement's right)
+      current = replacement;
     }
+
+    const child = current.left != null ? current.left : current.right;
+    // If current is red node, replace with its child, which must be black.
+    // If current is black and child is red, replace with its child, and
+    // repaint it to black.
+    // If both node are black, it would invalidate the tree if we replace with
+    // its child, then we need to go further to reconsolidate the tree.
+    if (currentParent != null) {
+      this.root = child;
+    } else if (currentDir) {
+      currentParent.right = child;
+    } else {
+      currentParent.left = child;
+    }
+
+    if (current.isRed) return true;
+    if (child.isRed) {
+      child.isRed = false;
+      return true;
+    }
+
+    // 1. If the node is root node now, there is no height problem anymore -
+    // we're done.
+    if (currentParent == null) return true;
+
+    // We need to reoffset between the parent, current, and the sibling node. 
+    current = child;
+    let parent = currentParent;
+    let sibling = currentDir ? currentParent.left : currentParent.right;
+
+    // 2. If sibling is red, reverse colors of parent and sibling, and rotate
+    // so parent gets in the sibling's position. Now the current node has
+    // a black sibling (sibling's child), and a red parent.
+
     return true;
   }
 
