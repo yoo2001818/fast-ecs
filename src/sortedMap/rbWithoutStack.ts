@@ -293,6 +293,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
 
     // We need to reoffset between the parent, current, and the sibling node. 
     current = child;
+    let grandparent = currentParent.parent;
     let parent = currentParent;
     let sibling = currentDir ? currentParent.left : currentParent.right;
 
@@ -300,6 +301,31 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     // so parent gets in the sibling's position. Now the current node has
     // a black sibling (sibling's child), and a red parent.
 
+    if (sibling.isRed) {
+      parent.isRed = true;
+      sibling.isRed = false;
+      if (currentDir) {
+        parent = rightRotate(parent);
+        if (grandparent == null) this.root = parent;
+      } else {
+        parent = leftRotate(parent);
+        if (grandparent == null) this.root = parent;
+      }
+    }
+
+    // 3. If parent, sibling, sibling's children are black, repaint sibling to
+    // red, and restart rebalancing at the parent.
+    
+    // 4. If sibling and sibling's children are black, but parent is red,
+    // exchange color between sibling and the parent.
+    
+    // 5. If sibling is black, left child is red, right child is black, and
+    // current node is left child of the parent, rotate right at sibling,
+    // and set colors accordingly. Then, reset sibling node, vice versa.
+
+    // 6. If sibiling is black, right child is red, and current node is left
+    // child of parent, rotate left at the parent node. Exchange colors of
+    // parent and sibling, and make sibling's right child black. 
     return true;
   }
 
