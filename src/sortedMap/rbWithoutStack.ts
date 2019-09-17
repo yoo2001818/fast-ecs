@@ -349,10 +349,39 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     // 5. If sibling is black, left child is red, right child is black, and
     // current node is left child of the parent, rotate right at sibling,
     // and set colors accordingly. Then, reset sibling node, vice versa.
-    
+    if (!sibling.isRed) {
+      if (
+        !parentDir &&
+        (sibling.left != null && sibling.left.isRed) &&
+        (sibling.right == null || !sibling.right.isRed)
+      ) {
+        sibling.isRed = true;
+        sibling.left.isRed = false;
+        rightRotate(sibling);
+      } else if (
+        parentDir &&
+        (sibling.left == null || !sibling.left.isRed) &&
+        (sibling.right != null && sibling.right.isRed)
+      ) {
+        sibling.isRed = true;
+        sibling.right.isRed = false;
+        leftRotate(sibling);
+      }
+    }
+
     // 6. If sibiling is black, right child is red, and current node is left
     // child of parent, rotate left at the parent node. Exchange colors of
     // parent and sibling, and make sibling's right child black. 
+    sibling.isRed = parent.isRed;
+    parent.isRed = false;
+    if (!parentDir) {
+      sibling.right.isRed = false;
+      leftRotate(parent);
+    } else {
+      sibling.left.isRed = false;
+      rightRotate(parent);
+    }
+    
     return true;
   }
 
