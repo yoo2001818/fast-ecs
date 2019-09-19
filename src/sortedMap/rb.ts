@@ -3,12 +3,14 @@ import { SortedMap } from './index';
 export class Node<K, V> {
   key: K;
   value: V;
+  parent: Node<K, V> | null;
   left: Node<K, V> | null;
   right: Node<K, V> | null;
   isRed: boolean;
   constructor(key: K, value: V) {
     this.key = key;
     this.value = value;
+    this.parent = null;
     this.left = null;
     this.right = null;
     this.isRed = false;
@@ -25,6 +27,8 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = right.left;
   right.left = node;
   node.right = t23;
+  right.parent = node.parent;
+  node.parent = right;
   return right;
 }
 
@@ -38,6 +42,8 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = left.right;
   left.right = node;
   node.left = t23;
+  left.parent = node.parent;
+  node.parent = left;
   return left;
 }
 
@@ -45,7 +51,6 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
   comparator: (a: K, b: K) => number;
   size: number = 0;
   root: Node<K, V> | null = null;
-  _stack: [Node<K, V>, boolean][] = [];
 
   constructor(comparator: (a: K, b: K) => number) {
     this.comparator = comparator;
@@ -97,128 +102,287 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       return this;
     }
     // Descend down to the created node...
-    // right = true
-    let stack: [Node<K, V>, boolean][] = [];
-    let prevDir = false;
-    let depth = 0;
-    {
-      let current = this.root;
-      while (true) {
-        const result = this.comparator(key, current.key);
-        if (result === 0) {
-          current.value = value;
-          return this;
-        } else if (result > 0) {
-          // key > current.key
-          if (current.right != null) {
-            current = current.right;
-            stack[depth] = [current, true];
-            depth += 1;
-          } else {
-            current.right = new Node(key, value);
-            current.right.isRed = true;
-            this.size += 1;
-            prevDir = true;
-            break;
-          }
-        } else if (result < 0) {
-          // key < current.key
-          if (current.left != null) {
-            current = current.left;
-            stack[depth] = [current, false];
-            depth += 1;
-          } else {
-            current.left = new Node(key, value);
-            current.left.isRed = true;
-            this.size += 1;
-            prevDir = false;
-            break;
-          }
+    let current = this.root;
+    while (true) {
+      const result = this.comparator(key, current.key);
+      if (result === 0) {
+        current.value = value;
+        return this;
+      } else if (result > 0) {
+        // key > current.key
+        if (current.right != null) {
+          current = current.right;
+        } else {
+          const newNode = new Node(key, value);
+          newNode.isRed = true;
+          newNode.parent = current;
+          current.right = newNode;
+          current = newNode;
+          this.size += 1;
+          break;
+        }
+      } else if (result < 0) {
+        // key < current.key
+        if (current.left != null) {
+          current = current.left;
+        } else {
+          const newNode = new Node(key, value);
+          newNode.isRed = true;
+          newNode.parent = current;
+          current.left = newNode;
+          this.size += 1;
+          break;
         }
       }
     }
     // Then perform a retracing loop.
-    depth -= 1;
-    while (depth >= 0) {
-      let item = stack[depth];
-      let current = item[0];
-      let dir = item[1];
-      let parentItem = depth > 0 ? stack[depth - 1] : null;
-      let parent = depth > 0 ? parentItem[0] : this.root;
-      let parentDir = depth > 0 ? parentItem[1] : false;
-      // If node's color is black, do nothing as it's a valid tree.
-      // If node's color is red, property 4 is violated - if a node is red,
+    while (true) {
+      // If the node is the root node, set itself to black and it's done.
+      let parent = current.parent;
+      if (parent == null) {
+        current.isRed = false;
+        this.root = current;
+        return;
+      }
+      // If parent's color is black, do nothing as it's a valid tree.
+      if (!parent.isRed) return;
+      // If parent's color is red, property 4 is violated - if a node is red,
       //   its children must be all black.
-      // Read the parent's other child (i.e. sibling) node's color.
-      // 1. If sibling node is red, both sibling and current node's color can be
-      //    repainted to black, and parent's color can be red.
-      //    However, grandparent's color can be red too - to resolve
-      //    this, repeat the validation for the grandparent.
-      // 2. If sibling node is black, we have to rotate the tree to make node 
-      //    to become parent (rotate right if the node is on left side,
-      //    and vice versa.) However, this does not work if the child node 
-      //    is already occupying that side. If that's the case, rotate
-      //    child node / current node to make it linear.
-      //    Then, rotate current node / parent node to fit current node into
-      //    parent's position, and repaint current node to black,
-      //    parent node to red. Since the current node's color is black, no more
-      //    validation is necessary.
-      
-      // Do nothing if the node's color is black.
-      if (!current.isRed) break;
-
-      let sibling = dir ? parent.left : parent.right;
-      if (sibling != null && sibling.isRed) {
-        // Repaint the node, and decrease the depth (to validate grandparent)
-        current.isRed = false;
-        sibling.isRed = false;
-        parent.isRed = true;
-        depth -= 2;
-        prevDir = parentDir;
+      // Read the grandparent's other child (i.e. uncle)'s color.
+      let grandparent = parent.parent;
+      const isParentRight = grandparent.right === parent;
+      const uncle = isParentRight ? grandparent.left : grandparent.right;
+      if (uncle != null && uncle.isRed) {
+        // If uncle node is red, both uncle and parent node's color can be
+        // repainted to black, and grandparent's color can be red. However,
+        // grandparent's parent's color can be red too - to resolve this,
+        // we repeat the validation for the grandparent.
+        uncle.isRed = false;
+        parent.isRed = false;
+        grandparent.isRed = true;
+        current = grandparent;
       } else {
-        // If the node is using left side, and its right side is occupied,
-        // rotate right. (and vice versa)
-        if (!dir && prevDir) {
-          current = leftRotate(current);
-          parent.left = current;
-        } else if (dir && !prevDir) {
-          current = rightRotate(current);
-          parent.right = current;
-        }
-        // Swap the node and parent's offset by rotating left / right.
-        current.isRed = false;
-        parent.isRed = true;
-        if (!dir) {
-          parent = rightRotate(parent);
-        } else {
+        // If uncle node is black, we have to rotate the tree to make parent to
+        // be in grandparent's position (rotate right if the parent is on left
+        // side, and vice versa) However, this doesn't work if the current node
+        // is already occupying that side. If that's the case, rotate current
+        // and parent node to make it linear.
+        // Then, rotate parent node and grandparent node. Repaint parent node
+        // to black, grandparent to red. Since top of the tree (= parent node)
+        // is black now, no more validation is necessary.
+        if (!isParentRight && parent.right === current) {
           parent = leftRotate(parent);
+          grandparent.left = parent;
+        } else if (isParentRight && parent.left === current) {
+          parent = rightRotate(parent);
+          grandparent.right = parent;
         }
-        // Ascend the stack and try to set the parent's parent...
-        if (depth > 0) {
-          let grandparent;
-          if (depth > 1) {
-            grandparent = stack[depth - 2][0];
+        parent.isRed = false;
+        grandparent.isRed = true;
+        let greatgrandparent = grandparent.parent;
+        if (!isParentRight) {
+          const result = rightRotate(grandparent);
+          if (greatgrandparent == null) {
+            this.root = result;
+          } else if (greatgrandparent.left === grandparent) {
+            greatgrandparent.left = result;
           } else {
-            grandparent = this.root;
-          }
-          if (parentDir) {
-            grandparent.right = parent;
-          } else {
-            grandparent.left = parent;
+            greatgrandparent.right = result;
           }
         } else {
-          this.root = parent;
+          const result = leftRotate(grandparent);
+          if (greatgrandparent == null) {
+            this.root = result;
+          } else if (greatgrandparent.left === grandparent) {
+            greatgrandparent.left = result;
+          } else {
+            greatgrandparent.right = result;
+          }
         }
-        break;
+        return;
       }
     }
-    // Set root node to black if it's not black.
-    if (this.root.isRed) this.root.isRed = false;
-    return this;
   }
 
   delete(key: K): boolean {
-    throw new Error('Not implemented');
+    if (this.root == null) return false;
+    // Try to descend down to the target node first, then delete the node.
+    let currentParent = null;
+    let currentDir = false;
+    let current = this.root;
+    while (true) {
+      const result = this.comparator(key, current.key);
+      if (result === 0) {
+        // Target node is found.
+        break;
+      } else if (result > 0) {
+        // key > current.key
+        if (current.right != null) {
+          currentParent = current;
+          currentDir = true;
+          current = current.right;
+        } else {
+          return false;
+        }
+      } else if (result < 0) {
+        // key < current.key
+        if (current.left != null) {
+          currentParent = current;
+          currentDir = false;
+          current = current.left;
+        } else {
+          return false;
+        }
+      }
+    }
+    // In red black tree, 'null' is considered a child and therefore all
+    // deletion is considered two children deletion.
+    if (current.left != null && current.right != null) {
+      // If both nodes are present, remove leftmost node from right node.
+      // This means that we have to traverse down to the bottom of the
+      // tree.
+      //
+      //     a      current                d
+      //    / \                           / \
+      //   f   b    replacement          f   b
+      //      / \                           / \
+      //     c   e  replacement -->        c   e
+      //    /                             /
+      //   d        replacement          g
+      //    \
+      //     g      replacement's right
+      currentParent = current;
+      currentDir = true;
+      let replacement = current.right;
+      while (replacement.left != null) {
+        currentParent = current;
+        currentDir = false;
+        replacement = replacement.left;
+      }
+      // Copy replacement's contents into current node.
+      current.key = replacement.key;
+      current.value = replacement.value;
+      // Then, try to run deletion algorithm for the replacement node (to
+      // properly set replacement's right)
+      current = replacement;
+    }
+
+    const child = current.left != null ? current.left : current.right;
+    // If current is red node, replace with its child, which must be black.
+    // If current is black and child is red, replace with its child, and
+    // repaint it to black.
+    // If both node are black, it would invalidate the tree if we replace with
+    // its child, then we need to go further to reconsolidate the tree.
+    if (currentParent != null) {
+      this.root = child;
+    } else if (currentDir) {
+      currentParent.right = child;
+    } else {
+      currentParent.left = child;
+    }
+
+    if (current.isRed) return true;
+    if (child.isRed) {
+      child.isRed = false;
+      return true;
+    }
+
+    // 1. If the node is root node now, there is no height problem anymore -
+    // we're done.
+    if (currentParent == null) return true;
+
+    // We need to reoffset between the parent, current, and the sibling node. 
+    current = child;
+    let grandparent = currentParent.parent;
+    let parent = currentParent;
+    let parentDir = grandparent != null && grandparent.right === parent;
+    let sibling = currentDir ? currentParent.left : currentParent.right;
+
+    // 2. If sibling is red, reverse colors of parent and sibling, and rotate
+    // so parent gets in the sibling's position. Now the current node has
+    // a black sibling (sibling's child), and a red parent.
+    if (sibling.isRed) {
+      parent.isRed = true;
+      sibling.isRed = false;
+      if (currentDir) {
+        parent = rightRotate(parent);
+        if (grandparent == null) this.root = parent;
+        else if (parentDir) grandparent.right = parent;
+        else grandparent.left = parent;
+        // Reset parent references...
+        grandparent = parent;
+        parent = current.parent;
+        sibling = parent.left;
+      } else {
+        parent = leftRotate(parent);
+        if (grandparent == null) this.root = parent;
+        else if (parentDir) grandparent.right = parent;
+        else grandparent.left = parent;
+        // Reset parent references...
+        grandparent = parent;
+        parent = current.parent;
+        sibling = parent.right;
+      }
+    }
+
+    // 3. If parent, sibling, sibling's children are black, repaint sibling to
+    // red, and restart rebalancing at the parent.
+    if (!parent.isRed && !sibling.isRed &&
+      (sibling.left == null || !sibling.left.isRed) &&
+      (sibling.right == null || !sibling.right.isRed)
+    ) {
+      sibling.isRed = true;
+      // TODO Rerun loop
+    }
+    
+    // 4. If sibling and sibling's children are black, but parent is red,
+    // exchange color between sibling and the parent.
+    if (parent.isRed && !sibling.isRed &&
+      (sibling.left == null || !sibling.left.isRed) &&
+      (sibling.right == null || !sibling.right.isRed)
+    ) {
+      sibling.isRed = true;
+      parent.isRed = false;
+      return true;
+    }
+    
+    // 5. If sibling is black, left child is red, right child is black, and
+    // current node is left child of the parent, rotate right at sibling,
+    // and set colors accordingly. Then, reset sibling node, vice versa.
+    if (!sibling.isRed) {
+      if (
+        !parentDir &&
+        (sibling.left != null && sibling.left.isRed) &&
+        (sibling.right == null || !sibling.right.isRed)
+      ) {
+        sibling.isRed = true;
+        sibling.left.isRed = false;
+        rightRotate(sibling);
+      } else if (
+        parentDir &&
+        (sibling.left == null || !sibling.left.isRed) &&
+        (sibling.right != null && sibling.right.isRed)
+      ) {
+        sibling.isRed = true;
+        sibling.right.isRed = false;
+        leftRotate(sibling);
+      }
+    }
+
+    // 6. If sibiling is black, right child is red, and current node is left
+    // child of parent, rotate left at the parent node. Exchange colors of
+    // parent and sibling, and make sibling's right child black. 
+    sibling.isRed = parent.isRed;
+    parent.isRed = false;
+    if (!parentDir) {
+      sibling.right.isRed = false;
+      leftRotate(parent);
+    } else {
+      sibling.left.isRed = false;
+      rightRotate(parent);
+    }
+    
+    return true;
   }
 
   clear(): void {

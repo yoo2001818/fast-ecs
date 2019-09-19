@@ -1,6 +1,6 @@
-import RedBlackSortedMap from './rb';
+import RedBlackSortedMap from './rbWithoutStack';
 
-describe('RedBlackSortedMap', () => {
+describe('RedBlackWoStackSortedMap', () => {
   it('should correctly insert nodes from simple tree', () => {
     let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
     map.set(1, 1);
