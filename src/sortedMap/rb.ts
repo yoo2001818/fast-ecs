@@ -287,102 +287,115 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       return true;
     }
 
-    // 1. If the node is root node now, there is no height problem anymore -
-    // we're done.
-    if (currentParent == null) return true;
-
     // We need to reoffset between the parent, current, and the sibling node. 
     current = child;
-    let grandparent = currentParent.parent;
-    let parent = currentParent;
-    let parentDir = grandparent != null && grandparent.right === parent;
-    let sibling = currentDir ? currentParent.left : currentParent.right;
 
-    // 2. If sibling is red, reverse colors of parent and sibling, and rotate
-    // so parent gets in the sibling's position. Now the current node has
-    // a black sibling (sibling's child), and a red parent.
-    if (sibling.isRed) {
-      parent.isRed = true;
-      sibling.isRed = false;
-      if (currentDir) {
-        parent = rightRotate(parent);
-        if (grandparent == null) this.root = parent;
-        else if (parentDir) grandparent.right = parent;
-        else grandparent.left = parent;
-        // Reset parent references...
-        grandparent = parent;
-        parent = current.parent;
-        sibling = parent.left;
-      } else {
+    while (true) {
+      currentParent = child.parent;
+      // 1. If the node is root node now, there is no height problem anymore -
+      // we're done.
+      if (currentParent == null) return true;
+      currentDir = currentParent.right === child;
+      let grandparent = currentParent.parent;
+      let parent = currentParent;
+      let parentDir = grandparent != null && grandparent.right === parent;
+      let sibling = currentDir ? currentParent.left : currentParent.right;
+
+      // 2. If sibling is red, reverse colors of parent and sibling, and rotate
+      // so parent gets in the sibling's position. Now the current node has
+      // a black sibling (sibling's child), and a red parent.
+      if (sibling.isRed) {
+        parent.isRed = true;
+        sibling.isRed = false;
+        if (currentDir) {
+          parent = rightRotate(parent);
+          if (grandparent == null) this.root = parent;
+          else if (parentDir) grandparent.right = parent;
+          else grandparent.left = parent;
+          // Reset parent references...
+          grandparent = parent;
+          parent = current.parent;
+          sibling = parent.left;
+        } else {
+          parent = leftRotate(parent);
+          if (grandparent == null) this.root = parent;
+          else if (parentDir) grandparent.right = parent;
+          else grandparent.left = parent;
+          // Reset parent references...
+          grandparent = parent;
+          parent = current.parent;
+          sibling = parent.right;
+        }
+      }
+
+      // 3. If parent, sibling, sibling's children are black, repaint sibling to
+      // red, and restart rebalancing at the parent.
+      if (!parent.isRed && !sibling.isRed &&
+        (sibling.left == null || !sibling.left.isRed) &&
+        (sibling.right == null || !sibling.right.isRed)
+      ) {
+        sibling.isRed = true;
+        // Rerun loop
+        current = parent;
+        continue;
+      }
+      
+      // 4. If sibling and sibling's children are black, but parent is red,
+      // exchange color between sibling and the parent.
+      if (parent.isRed && !sibling.isRed &&
+        (sibling.left == null || !sibling.left.isRed) &&
+        (sibling.right == null || !sibling.right.isRed)
+      ) {
+        sibling.isRed = true;
+        parent.isRed = false;
+        return true;
+      }
+      
+      // 5. If sibling is black, left child is red, right child is black, and
+      // current node is left child of the parent, rotate right at sibling,
+      // and set colors accordingly. Then, reset sibling node, vice versa.
+      if (!sibling.isRed) {
+        if (
+          !parentDir &&
+          (sibling.left != null && sibling.left.isRed) &&
+          (sibling.right == null || !sibling.right.isRed)
+        ) {
+          sibling.isRed = true;
+          sibling.left.isRed = false;
+          sibling = rightRotate(sibling);
+          parent.right = sibling;
+        } else if (
+          parentDir &&
+          (sibling.left == null || !sibling.left.isRed) &&
+          (sibling.right != null && sibling.right.isRed)
+        ) {
+          sibling.isRed = true;
+          sibling.right.isRed = false;
+          sibling = leftRotate(sibling);
+          parent.left = sibling;
+        }
+      }
+
+      // 6. If sibiling is black, right child is red, and current node is left
+      // child of parent, rotate left at the parent node. Exchange colors of
+      // parent and sibling, and make sibling's right child black. 
+      sibling.isRed = parent.isRed;
+      parent.isRed = false;
+      if (!parentDir) {
+        sibling.right.isRed = false;
         parent = leftRotate(parent);
         if (grandparent == null) this.root = parent;
         else if (parentDir) grandparent.right = parent;
         else grandparent.left = parent;
-        // Reset parent references...
-        grandparent = parent;
-        parent = current.parent;
-        sibling = parent.right;
+      } else {
+        sibling.left.isRed = false;
+        parent = rightRotate(parent);
+        if (grandparent == null) this.root = parent;
+        else if (parentDir) grandparent.right = parent;
+        else grandparent.left = parent;
       }
-    }
-
-    // 3. If parent, sibling, sibling's children are black, repaint sibling to
-    // red, and restart rebalancing at the parent.
-    if (!parent.isRed && !sibling.isRed &&
-      (sibling.left == null || !sibling.left.isRed) &&
-      (sibling.right == null || !sibling.right.isRed)
-    ) {
-      sibling.isRed = true;
-      // TODO Rerun loop
-    }
-    
-    // 4. If sibling and sibling's children are black, but parent is red,
-    // exchange color between sibling and the parent.
-    if (parent.isRed && !sibling.isRed &&
-      (sibling.left == null || !sibling.left.isRed) &&
-      (sibling.right == null || !sibling.right.isRed)
-    ) {
-      sibling.isRed = true;
-      parent.isRed = false;
       return true;
     }
-    
-    // 5. If sibling is black, left child is red, right child is black, and
-    // current node is left child of the parent, rotate right at sibling,
-    // and set colors accordingly. Then, reset sibling node, vice versa.
-    if (!sibling.isRed) {
-      if (
-        !parentDir &&
-        (sibling.left != null && sibling.left.isRed) &&
-        (sibling.right == null || !sibling.right.isRed)
-      ) {
-        sibling.isRed = true;
-        sibling.left.isRed = false;
-        rightRotate(sibling);
-      } else if (
-        parentDir &&
-        (sibling.left == null || !sibling.left.isRed) &&
-        (sibling.right != null && sibling.right.isRed)
-      ) {
-        sibling.isRed = true;
-        sibling.right.isRed = false;
-        leftRotate(sibling);
-      }
-    }
-
-    // 6. If sibiling is black, right child is red, and current node is left
-    // child of parent, rotate left at the parent node. Exchange colors of
-    // parent and sibling, and make sibling's right child black. 
-    sibling.isRed = parent.isRed;
-    parent.isRed = false;
-    if (!parentDir) {
-      sibling.right.isRed = false;
-      leftRotate(parent);
-    } else {
-      sibling.left.isRed = false;
-      rightRotate(parent);
-    }
-    
-    return true;
   }
 
   clear(): void {
@@ -508,7 +521,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     return this.entries();
   }
   get [Symbol.toStringTag](): string {
-    return 'AVLSortedMap';
+    return 'RedBlackSortedMap';
   }
 
 }
