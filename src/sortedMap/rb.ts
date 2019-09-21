@@ -282,7 +282,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     }
 
     if (current.isRed) return true;
-    if (child.isRed) {
+    if (child != null && child.isRed) {
       child.isRed = false;
       return true;
     }
@@ -291,11 +291,11 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     current = child;
 
     while (true) {
-      currentParent = child.parent;
+      currentParent = current.parent;
       // 1. If the node is root node now, there is no height problem anymore -
       // we're done.
       if (currentParent == null) return true;
-      currentDir = currentParent.right === child;
+      currentDir = currentParent.right === current;
       let grandparent = currentParent.parent;
       let parent = currentParent;
       let parentDir = grandparent != null && grandparent.right === parent;
@@ -304,7 +304,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       // 2. If sibling is red, reverse colors of parent and sibling, and rotate
       // so parent gets in the sibling's position. Now the current node has
       // a black sibling (sibling's child), and a red parent.
-      if (sibling.isRed) {
+      if (sibling != null && sibling.isRed) {
         parent.isRed = true;
         sibling.isRed = false;
         if (currentDir) {
@@ -330,7 +330,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
 
       // 3. If parent, sibling, sibling's children are black, repaint sibling to
       // red, and restart rebalancing at the parent.
-      if (!parent.isRed && !sibling.isRed &&
+      if (!parent.isRed && sibling != null && !sibling.isRed &&
         (sibling.left == null || !sibling.left.isRed) &&
         (sibling.right == null || !sibling.right.isRed)
       ) {
@@ -342,7 +342,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       
       // 4. If sibling and sibling's children are black, but parent is red,
       // exchange color between sibling and the parent.
-      if (parent.isRed && !sibling.isRed &&
+      if (parent.isRed && sibling != null && !sibling.isRed &&
         (sibling.left == null || !sibling.left.isRed) &&
         (sibling.right == null || !sibling.right.isRed)
       ) {
@@ -354,7 +354,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       // 5. If sibling is black, left child is red, right child is black, and
       // current node is left child of the parent, rotate right at sibling,
       // and set colors accordingly. Then, reset sibling node, vice versa.
-      if (!sibling.isRed) {
+      if (sibling == null && !sibling.isRed) {
         if (
           !parentDir &&
           (sibling.left != null && sibling.left.isRed) &&

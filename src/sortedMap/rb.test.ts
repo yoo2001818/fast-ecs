@@ -1,4 +1,4 @@
-import RedBlackSortedMap from './rbWithoutStack';
+import RedBlackSortedMap from './rb';
 
 describe('RedBlackWoStackSortedMap', () => {
   it('should correctly insert nodes from simple tree', () => {
@@ -35,6 +35,21 @@ describe('RedBlackWoStackSortedMap', () => {
   it('should correctly remove nodes from simple tree', () => {
   });
   it('should correctly remove nodes from complex tree', () => {
+    let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+    let sortedInput = Array.from({ length: 10 }, (_, i) => i);
+    let input = sortedInput.slice();
+    input.forEach(v => map.set(v, v));
+    for (let i = 0; i < input.length - 1; i += 1) {
+      let j = (Math.random() * (input.length - 1 - i) | 0) + i;
+      let prev = input[i];
+      input[i] = input[j];
+      input[j] = prev;
+    }
+    input.forEach(v => {
+      map.delete(v);
+    });
+    expect(map.size).toBe(input.length);
+    expect([...map.values()]).toEqual(sortedInput);
   });
   it('should correctly remove nodes from very complex tree', () => {
   });
