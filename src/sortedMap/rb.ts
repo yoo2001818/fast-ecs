@@ -15,6 +15,15 @@ export class Node<K, V> {
     this.right = null;
     this.isRed = false;
   }
+  toJSON() {
+    return {
+      key: this.key,
+      value: this.value,
+      isRed: this.isRed,
+      left: this.left,
+      right: this.right,
+    }
+  }
 }
 
 function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
@@ -267,13 +276,15 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       current = replacement;
     }
 
+    console.log('grabbed', current.key);
+
     const child = current.left != null ? current.left : current.right;
     // If current is red node, replace with its child, which must be black.
     // If current is black and child is red, replace with its child, and
     // repaint it to black.
     // If both node are black, it would invalidate the tree if we replace with
     // its child, then we need to go further to reconsolidate the tree.
-    if (currentParent != null) {
+    if (currentParent == null) {
       this.root = child;
     } else if (currentDir) {
       currentParent.right = child;
@@ -289,6 +300,10 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
 
     // We need to reoffset between the parent, current, and the sibling node. 
     current = child;
+    if (child == null) return true;
+
+    console.log('entering');
+    console.log(JSON.stringify(current, null, 2));
 
     while (true) {
       currentParent = current.parent;
@@ -301,6 +316,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       let parentDir = grandparent != null && grandparent.right === parent;
       let sibling = currentDir ? currentParent.left : currentParent.right;
 
+      console.log('stage 2');
       // 2. If sibling is red, reverse colors of parent and sibling, and rotate
       // so parent gets in the sibling's position. Now the current node has
       // a black sibling (sibling's child), and a red parent.
@@ -328,6 +344,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
         }
       }
 
+      console.log('stage 3');
       // 3. If parent, sibling, sibling's children are black, repaint sibling to
       // red, and restart rebalancing at the parent.
       if (!parent.isRed && sibling != null && !sibling.isRed &&
@@ -340,6 +357,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
         continue;
       }
       
+      console.log('stage 4');
       // 4. If sibling and sibling's children are black, but parent is red,
       // exchange color between sibling and the parent.
       if (parent.isRed && sibling != null && !sibling.isRed &&
@@ -351,10 +369,11 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
         return true;
       }
       
+      console.log('stage 5');
       // 5. If sibling is black, left child is red, right child is black, and
       // current node is left child of the parent, rotate right at sibling,
       // and set colors accordingly. Then, reset sibling node, vice versa.
-      if (sibling == null && !sibling.isRed) {
+      if (sibling != null && !sibling.isRed) {
         if (
           !parentDir &&
           (sibling.left != null && sibling.left.isRed) &&
@@ -376,6 +395,8 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
         }
       }
 
+      console.log('stage 6');
+      console.log(JSON.stringify(parent, null, 2));
       // 6. If sibiling is black, right child is red, and current node is left
       // child of parent, rotate left at the parent node. Exchange colors of
       // parent and sibling, and make sibling's right child black. 
