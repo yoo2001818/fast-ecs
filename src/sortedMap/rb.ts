@@ -216,8 +216,6 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
   delete(key: K): boolean {
     if (this.root == null) return false;
     // Try to descend down to the target node first, then delete the node.
-    let currentParent = null;
-    let currentDir = false;
     let current = this.root;
     while (true) {
       const result = this.comparator(key, current.key);
@@ -227,8 +225,6 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       } else if (result > 0) {
         // key > current.key
         if (current.right != null) {
-          currentParent = current;
-          currentDir = true;
           current = current.right;
         } else {
           return false;
@@ -236,8 +232,6 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       } else if (result < 0) {
         // key < current.key
         if (current.left != null) {
-          currentParent = current;
-          currentDir = false;
           current = current.left;
         } else {
           return false;
@@ -260,12 +254,8 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       //   d        replacement          g
       //    \
       //     g      replacement's right
-      currentParent = current;
-      currentDir = true;
       let replacement = current.right;
       while (replacement.left != null) {
-        currentParent = current;
-        currentDir = false;
         replacement = replacement.left;
       }
       // Copy replacement's contents into current node.
@@ -276,147 +266,36 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       current = replacement;
     }
 
+    console.log(JSON.stringify(this.root, null, 2));
     console.log('grabbed', current.key);
 
+    let currentParent = current.parent;
+    let currentDir = currentParent != null && currentParent.right === current;
     const child = current.left != null ? current.left : current.right;
-    // If current is red node, replace with its child, which must be black.
-    // If current is black and child is red, replace with its child, and
-    // repaint it to black.
-    // If both node are black, it would invalidate the tree if we replace with
-    // its child, then we need to go further to reconsolidate the tree.
-    if (currentParent == null) {
-      this.root = child;
-    } else if (currentDir) {
-      currentParent.right = child;
-    } else {
-      currentParent.left = child;
-    }
 
-    if (current.isRed) return true;
-    if (child != null && child.isRed) {
-      child.isRed = false;
-      return true;
-    }
-
-    // We need to reoffset between the parent, current, and the sibling node. 
-    current = child;
-    if (child == null) return true;
-
-    console.log('entering');
-    console.log(JSON.stringify(current, null, 2));
-
-    while (true) {
-      currentParent = current.parent;
-      // 1. If the node is root node now, there is no height problem anymore -
-      // we're done.
-      if (currentParent == null) return true;
-      currentDir = currentParent.right === current;
-      let grandparent = currentParent.parent;
-      let parent = currentParent;
-      let parentDir = grandparent != null && grandparent.right === parent;
-      let sibling = currentDir ? currentParent.left : currentParent.right;
-
-      console.log('stage 2');
-      // 2. If sibling is red, reverse colors of parent and sibling, and rotate
-      // so parent gets in the sibling's position. Now the current node has
-      // a black sibling (sibling's child), and a red parent.
-      if (sibling != null && sibling.isRed) {
-        parent.isRed = true;
-        sibling.isRed = false;
-        if (currentDir) {
-          parent = rightRotate(parent);
-          if (grandparent == null) this.root = parent;
-          else if (parentDir) grandparent.right = parent;
-          else grandparent.left = parent;
-          // Reset parent references...
-          grandparent = parent;
-          parent = current.parent;
-          sibling = parent.left;
-        } else {
-          parent = leftRotate(parent);
-          if (grandparent == null) this.root = parent;
-          else if (parentDir) grandparent.right = parent;
-          else grandparent.left = parent;
-          // Reset parent references...
-          grandparent = parent;
-          parent = current.parent;
-          sibling = parent.right;
-        }
-      }
-
-      console.log('stage 3');
-      // 3. If parent, sibling, sibling's children are black, repaint sibling to
-      // red, and restart rebalancing at the parent.
-      if (!parent.isRed && sibling != null && !sibling.isRed &&
-        (sibling.left == null || !sibling.left.isRed) &&
-        (sibling.right == null || !sibling.right.isRed)
-      ) {
-        sibling.isRed = true;
-        // Rerun loop
-        current = parent;
-        continue;
-      }
-      
-      console.log('stage 4');
-      // 4. If sibling and sibling's children are black, but parent is red,
-      // exchange color between sibling and the parent.
-      if (parent.isRed && sibling != null && !sibling.isRed &&
-        (sibling.left == null || !sibling.left.isRed) &&
-        (sibling.right == null || !sibling.right.isRed)
-      ) {
-        sibling.isRed = true;
-        parent.isRed = false;
-        return true;
-      }
-      
-      console.log('stage 5');
-      // 5. If sibling is black, left child is red, right child is black, and
-      // current node is left child of the parent, rotate right at sibling,
-      // and set colors accordingly. Then, reset sibling node, vice versa.
-      if (sibling != null && !sibling.isRed) {
-        if (
-          !parentDir &&
-          (sibling.left != null && sibling.left.isRed) &&
-          (sibling.right == null || !sibling.right.isRed)
-        ) {
-          sibling.isRed = true;
-          sibling.left.isRed = false;
-          sibling = rightRotate(sibling);
-          parent.right = sibling;
-        } else if (
-          parentDir &&
-          (sibling.left == null || !sibling.left.isRed) &&
-          (sibling.right != null && sibling.right.isRed)
-        ) {
-          sibling.isRed = true;
-          sibling.right.isRed = false;
-          sibling = leftRotate(sibling);
-          parent.left = sibling;
-        }
-      }
-
-      console.log('stage 6');
-      console.log(JSON.stringify(parent, null, 2));
-      // 6. If sibiling is black, right child is red, and current node is left
-      // child of parent, rotate left at the parent node. Exchange colors of
-      // parent and sibling, and make sibling's right child black. 
-      sibling.isRed = parent.isRed;
-      parent.isRed = false;
-      if (!parentDir) {
-        sibling.right.isRed = false;
-        parent = leftRotate(parent);
-        if (grandparent == null) this.root = parent;
-        else if (parentDir) grandparent.right = parent;
-        else grandparent.left = parent;
+    // Child will replace the current node. If child is null, just consider it
+    // black go on with it.
+    
+    // If child or current is red, mark the replaced child as black, and we're
+    // done. Since no two consecutive red node is not allowed, this will
+    // effectively mean one of the node is black.
+    if (current.isRed || (child != null && child.isRed)) {
+      if (child != null) child.isRed = false;
+      if (currentParent != null) {
+        if (currentDir) currentParent.right = child;
+        else currentParent.left = child;
       } else {
-        sibling.left.isRed = false;
-        parent = rightRotate(parent);
-        if (grandparent == null) this.root = parent;
-        else if (parentDir) grandparent.right = parent;
-        else grandparent.left = parent;
+        this.root = child;
       }
       return true;
     }
+
+    // If both child and current is black, we need to rebalance the tree
+    // accordingly. We need to consider node as 'double black'.
+    while (current != null) {
+
+    }
+
   }
 
   clear(): void {
