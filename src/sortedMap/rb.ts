@@ -36,6 +36,7 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = right.left;
   right.left = node;
   node.right = t23;
+  if (t23 != null) t23.parent = node;
   right.parent = node.parent;
   node.parent = right;
   return right;
@@ -51,6 +52,7 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   let t23 = left.right;
   left.right = node;
   node.left = t23;
+  if (t23 != null) t23.parent = node;
   left.parent = node.parent;
   node.parent = left;
   return left;
@@ -241,6 +243,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     // In red black tree, 'null' is considered a child and therefore all
     // deletion is considered two children deletion.
     if (current.left != null && current.right != null) {
+      console.log('Both deletion');
       // If both nodes are present, remove leftmost node from right node.
       // This means that we have to traverse down to the bottom of the
       // tree.
@@ -269,9 +272,11 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     console.log(JSON.stringify(this.root, null, 2));
     console.log('grabbed', current.key);
 
-    let currentParent = current.parent;
-    let currentDir = currentParent != null && currentParent.right === current;
+    let parent = current.parent;
+    let currentDir = parent != null && parent.right === current;
     const child = current.left != null ? current.left : current.right;
+
+    console.log(child);
 
     // Child will replace the current node. If child is null, just consider it
     // black go on with it.
@@ -280,20 +285,96 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     // done. Since no two consecutive red node is not allowed, this will
     // effectively mean one of the node is black.
     if (current.isRed || (child != null && child.isRed)) {
+      console.log('Marking red...');
       if (child != null) child.isRed = false;
-      if (currentParent != null) {
-        if (currentDir) currentParent.right = child;
-        else currentParent.left = child;
+      if (parent != null) {
+        if (currentDir) parent.right = child;
+        else parent.left = child;
       } else {
         this.root = child;
+        child.parent = null;
       }
       return true;
     }
 
     // If both child and current is black, we need to rebalance the tree
     // accordingly. We need to consider node as 'double black'.
+    if (parent != null) {
+      console.log('Overwriting...');
+      console.log(JSON.stringify(parent, null, 2));
+      console.log(JSON.stringify(current, null, 2));
+      // Parent reference is wrong. WTF?
+      console.log(JSON.stringify(current.parent, null, 2));
+      if (currentDir) parent.right = child;
+      else parent.left = child;
+    } else {
+      console.log('Setting root...');
+      this.root = child;
+      if (child != null) {
+        child.parent = null;
+        child.isRed = false;
+      }
+      return true;
+    }
+    current = child;
+    // parent must be present at this point
     while (current != null) {
-
+      if (current.parent == null) {
+        // Paint current to black, then leave.
+        current.isRed = false;
+        return true;
+      }
+      let sibling = currentDir ? parent.left : parent.right;
+      if (sibling == null || !sibling.isRed) {
+        if (sibling == null) {
+          console.log('How did this happen?');
+          console.log(JSON.stringify(parent, null, 2));
+        }
+        const siblingLeftIsRed = sibling.left != null && sibling.left.isRed;
+        const siblingRightIsRed = sibling.right != null && sibling.right.isRed;
+        console.log('sibling', siblingLeftIsRed, siblingRightIsRed);
+        if (siblingLeftIsRed || siblingRightIsRed) {
+          const grandparent = parent.parent;
+          const grandparentDir =
+            grandparent != null && grandparent.right === parent;
+          if (currentDir) {
+            // Left case
+            if (siblingRightIsRed) {
+              // Left right case
+              sibling = leftRotate(sibling);
+              parent.left = sibling;
+            }
+            parent = rightRotate(parent);
+          } else {
+            // Right case
+            if (siblingLeftIsRed) {
+              // Right left case
+              sibling = rightRotate(sibling);
+              parent.right = sibling;
+            }
+            parent = leftRotate(parent);
+          }
+          if (grandparent == null) {
+            this.root = parent;
+          } else if (grandparentDir) {
+            grandparent.right = parent;
+          } else {
+            grandparent.left = parent;
+          }
+          return true;
+        } else {
+          // If sibling is black and its children are black, paint sibling red,
+          // and repeat for the parent.
+          console.log('...');
+          sibling.isRed = true;
+          current = parent;
+          parent = current.parent;
+          currentDir = parent != null && parent.right === current;
+        }
+      } else {
+        // Sibling is red...
+        console.log('sibling is red');
+      }
     }
 
   }
@@ -343,17 +424,21 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       // For that reason, we need to descend down to the leftmost node.
       if (!reversed) {
         let current = this.root;
-        stack.push(current);
-        while (current.left != null) {
-          stack.push(current.left);
-          current = current.left;
+        if (current != null) {
+          stack.push(current);
+          while (current.left != null) {
+            stack.push(current.left);
+            current = current.left;
+          }
         }
       } else {
         let current = this.root;
-        stack.push(current);
-        while (current.right != null) {
-          stack.push(current.right);
-          current = current.right;
+        if (current != null) {
+          stack.push(current);
+          while (current.right != null) {
+            stack.push(current.right);
+            current = current.right;
+          }
         }
       }
     }

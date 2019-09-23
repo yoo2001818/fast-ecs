@@ -45,11 +45,13 @@ describe('RedBlackWoStackSortedMap', () => {
       input[i] = input[j];
       input[j] = prev;
     }
-    input.forEach(v => {
+    input = [2, 0, 1, 3, 4, 5, 6, 7, 8, 9];
+    input.forEach((v, i) => {
       map.delete(v);
+      console.log(JSON.stringify(map.root, null, 2));
+      expect([...map.values()])
+        .toEqual(sortedInput.filter(k => !input.slice(0, i + 1).includes(k)));
     });
-    expect(map.size).toBe(input.length);
-    expect([...map.values()]).toEqual(sortedInput);
   });
   it('should correctly remove nodes from very complex tree', () => {
   });
