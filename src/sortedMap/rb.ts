@@ -286,13 +286,15 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     // effectively mean one of the node is black.
     if (current.isRed || (child != null && child.isRed)) {
       console.log('Marking red...');
-      if (child != null) child.isRed = false;
+      if (child != null) {
+        child.isRed = false;
+        child.parent = parent;
+      }
       if (parent != null) {
         if (currentDir) parent.right = child;
         else parent.left = child;
       } else {
         this.root = child;
-        child.parent = null;
       }
       return true;
     }
@@ -305,6 +307,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       console.log(JSON.stringify(current, null, 2));
       // Parent reference is wrong. WTF?
       console.log(JSON.stringify(current.parent, null, 2));
+      if (child != null) child.parent = parent;
       if (currentDir) parent.right = child;
       else parent.left = child;
     } else {
@@ -374,6 +377,27 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       } else {
         // Sibling is red...
         console.log('sibling is red');
+        const grandparent = parent.parent;
+        const grandparentDir =
+          grandparent != null && grandparent.right === parent;
+        if (currentDir) {
+          // Sibling is on the right side; left rotate the parent.
+          sibling.isRed = false;
+          parent.isRed = true;
+          parent = leftRotate(parent);
+        } else {
+          // Sibling is on the left side; right rotate the parent.
+          sibling.isRed = false;
+          parent.isRed = true;
+          parent = rightRotate(parent);
+        }
+        if (grandparent == null) {
+          this.root = parent;
+        } else if (grandparentDir) {
+          grandparent.right = parent;
+        } else {
+          grandparent.left = parent;
+        }
       }
     }
 

@@ -45,8 +45,9 @@ describe('RedBlackWoStackSortedMap', () => {
       input[i] = input[j];
       input[j] = prev;
     }
-    input = [2, 0, 1, 3, 4, 5, 6, 7, 8, 9];
+    input = [8, 7, 0, 1, 2, 3, 4, 5, 6, 9];
     input.forEach((v, i) => {
+      console.log('---- ' + v);
       map.delete(v);
       console.log(JSON.stringify(map.root, null, 2));
       expect([...map.values()])
