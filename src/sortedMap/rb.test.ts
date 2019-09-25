@@ -1,4 +1,15 @@
-import RedBlackSortedMap from './rb';
+import RedBlackSortedMap, { Node } from './rb';
+
+function assertRedBlackInvariant<K, V>(node: Node<K, V>): number {
+  if (node == null) return 1;
+  const leftCount = assertRedBlackInvariant(node.left);
+  const rightCount = assertRedBlackInvariant(node.right);
+  if (leftCount !== rightCount) {
+    console.log(JSON.stringify(node, null, 2));
+    throw new Error('Red black tree invariant broken');
+  }
+  return leftCount + (node.isRed ? 0 : 1);
+}
 
 describe('RedBlackWoStackSortedMap', () => {
   it('should correctly insert nodes from simple tree', () => {
@@ -21,6 +32,7 @@ describe('RedBlackWoStackSortedMap', () => {
     }
     input.forEach(v => {
       map.set(v, v);
+      assertRedBlackInvariant(map.root);
     });
     expect(map.size).toBe(input.length);
     expect([...map.values()]).toEqual(sortedInput);
@@ -45,17 +57,46 @@ describe('RedBlackWoStackSortedMap', () => {
       input[i] = input[j];
       input[j] = prev;
     }
-    input = [8, 7, 0, 1, 2, 3, 4, 5, 6, 9];
+    input = [7, 8, 0, 1, 2, 3, 4, 5, 6, 9];
     input.forEach((v, i) => {
-      console.log('---- ' + v);
       map.delete(v);
+      console.log(v, 'deleted');
+      expect([...map.values()]).toEqual(sortedInput
+        .filter(v => !input.slice(0, i + 1).includes(v)));
       console.log(JSON.stringify(map.root, null, 2));
-      expect([...map.values()])
-        .toEqual(sortedInput.filter(k => !input.slice(0, i + 1).includes(k)));
+      assertRedBlackInvariant(map.root);
     });
+    expect(map.size).toBe(0);
+    expect([...map.values()]).toEqual([]);
   });
+  /*
+  it('should correctly remove nodes from complex tree 2', () => {
+    let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+    let sortedInput = Array.from({ length: 46 }, (_, i) => i);
+    let input = sortedInput.slice();
+    input.forEach(v => map.set(v, v));
+    console.log(JSON.stringify(map.root, null, 2));
+    input.forEach((v) => {
+      console.log(v);
+      map.delete(v);
+      console.log(v, 'deleted');
+      assertRedBlackInvariant(map.root);
+    });
+    expect(map.size).toBe(0);
+    expect([...map.values()]).toEqual([]);
+  });
+  /*
   it('should correctly remove nodes from very complex tree', () => {
+    let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+    for (let i = 0; i < 1000000; i += 1) {
+      map.set(i, i);
+    }
+    for (let i = 0; i < 1000000; i += 1) {
+      map.delete(i);
+    }
+    expect(map.size).toBe(0);
   });
+  */
   it('should correctly traverse the tree', () => {
     let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
     for (let i = 0; i < 10; i += 1) {

@@ -272,6 +272,8 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     console.log(JSON.stringify(this.root, null, 2));
     console.log('grabbed', current.key);
 
+    this.size -= 1;
+
     let parent = current.parent;
     let currentDir = parent != null && parent.right === current;
     const child = current.left != null ? current.left : current.right;
@@ -303,13 +305,11 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     // accordingly. We need to consider node as 'double black'.
     if (parent != null) {
       console.log('Overwriting...');
-      console.log(JSON.stringify(parent, null, 2));
-      console.log(JSON.stringify(current, null, 2));
       // Parent reference is wrong. WTF?
-      console.log(JSON.stringify(current.parent, null, 2));
       if (child != null) child.parent = parent;
       if (currentDir) parent.right = child;
       else parent.left = child;
+      console.log(JSON.stringify(parent, null, 2));
     } else {
       console.log('Setting root...');
       this.root = child;
@@ -321,10 +321,12 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     }
     current = child;
     // parent must be present at this point
-    while (current != null) {
-      if (current.parent == null) {
+    // TODO since double black is need to perform this, we need to do this even
+    // if current is null...
+    while (true) {
+      if (parent == null) {
         // Paint current to black, then leave.
-        current.isRed = false;
+        if (current != null) current.isRed = false;
         return true;
       }
       let sibling = currentDir ? parent.left : parent.right;
@@ -370,6 +372,10 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
           // and repeat for the parent.
           console.log('...');
           sibling.isRed = true;
+          if (parent.isRed) {
+            parent.isRed = false;
+            return true;
+          }
           current = parent;
           parent = current.parent;
           currentDir = parent != null && parent.right === current;
@@ -380,7 +386,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
         const grandparent = parent.parent;
         const grandparentDir =
           grandparent != null && grandparent.right === parent;
-        if (currentDir) {
+        if (!currentDir) {
           // Sibling is on the right side; left rotate the parent.
           sibling.isRed = false;
           parent.isRed = true;
