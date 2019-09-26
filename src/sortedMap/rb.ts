@@ -324,6 +324,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     // TODO since double black is need to perform this, we need to do this even
     // if current is null...
     while (true) {
+      console.log(JSON.stringify(parent, null, 2));
       if (parent == null) {
         // Paint current to black, then leave.
         if (current != null) current.isRed = false;
@@ -386,23 +387,28 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
         const grandparent = parent.parent;
         const grandparentDir =
           grandparent != null && grandparent.right === parent;
+        let newParent;
         if (!currentDir) {
           // Sibling is on the right side; left rotate the parent.
           sibling.isRed = false;
           parent.isRed = true;
-          parent = leftRotate(parent);
+          newParent = leftRotate(parent);
+          // Parent is still intact for now; we shouldn't change it since it
+          // should be connected to the current node.
         } else {
           // Sibling is on the left side; right rotate the parent.
           sibling.isRed = false;
           parent.isRed = true;
-          parent = rightRotate(parent);
+          newParent = rightRotate(parent);
+          // Parent is still intact for now; we shouldn't change it since it
+          // should be connected to the current node.
         }
         if (grandparent == null) {
-          this.root = parent;
+          this.root = newParent;
         } else if (grandparentDir) {
-          grandparent.right = parent;
+          grandparent.right = newParent;
         } else {
-          grandparent.left = parent;
+          grandparent.left = newParent;
         }
       }
     }
