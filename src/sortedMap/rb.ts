@@ -141,6 +141,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
           newNode.isRed = true;
           newNode.parent = current;
           current.left = newNode;
+          current = newNode;
           this.size += 1;
           break;
         }
@@ -243,7 +244,6 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     // In red black tree, 'null' is considered a child and therefore all
     // deletion is considered two children deletion.
     if (current.left != null && current.right != null) {
-      console.log('Both deletion');
       // If both nodes are present, remove leftmost node from right node.
       // This means that we have to traverse down to the bottom of the
       // tree.
@@ -269,16 +269,11 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       current = replacement;
     }
 
-    console.log(JSON.stringify(this.root, null, 2));
-    console.log('grabbed', current.key);
-
     this.size -= 1;
 
     let parent = current.parent;
     let currentDir = parent != null && parent.right === current;
     const child = current.left != null ? current.left : current.right;
-
-    console.log(child);
 
     // Child will replace the current node. If child is null, just consider it
     // black go on with it.
@@ -287,7 +282,6 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     // done. Since no two consecutive red node is not allowed, this will
     // effectively mean one of the node is black.
     if (current.isRed || (child != null && child.isRed)) {
-      console.log('Marking red...');
       if (child != null) {
         child.isRed = false;
         child.parent = parent;
@@ -304,14 +298,10 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     // If both child and current is black, we need to rebalance the tree
     // accordingly. We need to consider node as 'double black'.
     if (parent != null) {
-      console.log('Overwriting...');
-      // Parent reference is wrong. WTF?
       if (child != null) child.parent = parent;
       if (currentDir) parent.right = child;
       else parent.left = child;
-      console.log(JSON.stringify(parent, null, 2));
     } else {
-      console.log('Setting root...');
       this.root = child;
       if (child != null) {
         child.parent = null;
@@ -321,24 +311,20 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     }
     current = child;
     // parent must be present at this point
-    // TODO since double black is need to perform this, we need to do this even
-    // if current is null...
     while (true) {
-      console.log(JSON.stringify(parent, null, 2));
       if (parent == null) {
         // Paint current to black, then leave.
         if (current != null) current.isRed = false;
         return true;
       }
       let sibling = currentDir ? parent.left : parent.right;
+      if (sibling == null) {
+        parent = parent.parent;
+        continue;
+      }
       if (sibling == null || !sibling.isRed) {
-        if (sibling == null) {
-          console.log('How did this happen?');
-          console.log(JSON.stringify(parent, null, 2));
-        }
         const siblingLeftIsRed = sibling.left != null && sibling.left.isRed;
         const siblingRightIsRed = sibling.right != null && sibling.right.isRed;
-        console.log('sibling', siblingLeftIsRed, siblingRightIsRed);
         if (siblingLeftIsRed || siblingRightIsRed) {
           const grandparent = parent.parent;
           const grandparentDir =
@@ -347,17 +333,27 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
             // Left case
             if (siblingRightIsRed) {
               // Left right case
+              if (sibling.left != null) sibling.left.isRed = parent.isRed;
               sibling = leftRotate(sibling);
               parent.left = sibling;
+            } else {
+              if (sibling.left != null) sibling.left.isRed = sibling.isRed;
+              sibling.isRed = parent.isRed;
             }
+            parent.isRed = false;
             parent = rightRotate(parent);
           } else {
             // Right case
             if (siblingLeftIsRed) {
               // Right left case
+              if (sibling.right != null) sibling.right.isRed = parent.isRed;
               sibling = rightRotate(sibling);
               parent.right = sibling;
+            } else {
+              if (sibling.right != null) sibling.right.isRed = sibling.isRed;
+              sibling.isRed = parent.isRed;
             }
+            parent.isRed = false;
             parent = leftRotate(parent);
           }
           if (grandparent == null) {
@@ -371,7 +367,6 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
         } else {
           // If sibling is black and its children are black, paint sibling red,
           // and repeat for the parent.
-          console.log('...');
           sibling.isRed = true;
           if (parent.isRed) {
             parent.isRed = false;
@@ -383,7 +378,6 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
         }
       } else {
         // Sibling is red...
-        console.log('sibling is red');
         const grandparent = parent.parent;
         const grandparentDir =
           grandparent != null && grandparent.right === parent;
