@@ -1,4 +1,5 @@
 import { SortedMap } from '../sortedMap';
+import RedBlackSortedMap from '../sortedMap/rb';
 // import EntitySignal from '../signal/entitySignal';
 import { Entity, EntitySignal } from '../type';
 
@@ -8,8 +9,12 @@ export default class ComponentStore<T> implements SortedMap<Entity, T> {
   added: EntitySignal<Entity>;
   changed: EntitySignal<Entity>;
   removed: EntitySignal<Entity>;
-  constructor(map: SortedMap<Entity, T>) {
-    this.map = map;
+  constructor(map?: SortedMap<Entity, T>) {
+    if (map == null) {
+      this.map = new RedBlackSortedMap((a, b) => b - a);
+    } else {
+      this.map = map;
+    }
     // TODO
     this.added = null;
     this.changed = null;
