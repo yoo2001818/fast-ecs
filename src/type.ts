@@ -1,7 +1,7 @@
 export type Component = any;
 
 // Entity is completely opaque type for now.
-export type Entity = unknown;
+export type Entity = number;
 
 export interface SortedMap<K, V> {
   get(key: K): V | undefined,

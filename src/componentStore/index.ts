@@ -26,24 +26,53 @@ export default class ComponentStore<T> implements SortedMap<Entity, T> {
   has(key: Entity): boolean {
     return this.map.has(key);
   }
-  set(key: Entity, value: T): void {
+  set(key: Entity, value: T): this {
     this.setChanged(key);
-    return this.map.set(key, value);
+    this.map.set(key, value);
+    return this;
   }
   setChanged(key: Entity): void {
     this.changed.emit(key);
   }
-  remove(key: Entity): void {
-    return this.map.remove(key);
+  delete(key: Entity): boolean {
+    return this.map.delete(key);
+  }
+  clear(): void {
+    return this.map.clear();
   }
 
-  forEach(callback: (value: T) => void): void {
-    return this.map.forEach(callback);
+  entries(
+    start?: Entity,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<[Entity, T]> {
+    return this.map.entries(start, after, reversed);
   }
-  forEachKeys(callback: (key: Entity) => void): void {
-    return this.map.forEachKeys(callback);
+
+  keys(
+    start?: Entity,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<Entity> {
+    return this.map.keys(start, after, reversed);
   }
-  forEachEntries(callback: (key: Entity, value: T) => void): void {
-    return this.map.forEachEntries(callback);
+
+  values(
+    start?: Entity,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<T> {
+    return this.map.values(start, after, reversed);
+  }
+
+  forEach(
+    callback: (value: T, key: Entity, map: SortedMap<Entity, T>) => void,
+    thisArg?: any,
+  ): void {
+    return this.map.forEach(callback, thisArg);
+  }
+
+  [Symbol.iterator](): IterableIterator<[Entity, T]> {
+    return this.map[Symbol.iterator]();
   }
 }
