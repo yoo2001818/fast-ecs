@@ -40,6 +40,13 @@ export default class ComponentStore<T> implements SortedMap<Entity, T> {
   clear(): void {
     return this.map.clear();
   }
+  get size(): number {
+    return this.map.size;
+  }
+
+  get [Symbol.toStringTag](): string {
+    return 'ComponentStore';
+  }
 
   entries(
     start?: Entity,
