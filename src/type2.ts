@@ -34,5 +34,17 @@ export interface SortedMap<K, V> extends Iterable<[K, V]>, Map<K, V> {
   [Symbol.iterator](): IterableIterator<[K, V]>,
 }
 
+// The goal is to store the game state efficiently as possible to quickly
+// enumerate required entities, and mutate them also quickly as possible.
+// Basically, we're building a single-threaded DBMS... 
+
+// The game state should be divided to two things.
+// - Actual game state, which can be anything.
+// - Index data of game state, which helps actual game code to quickly find
+//   needed entities.
+//
+// However, since game state can be mutated, it should at least ensure some
+// kind of ACID - rollback is not required, however, it should be reliable.
+
 export interface BitSet extends Iterable<number>, Set<number> {
 }
