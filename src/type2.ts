@@ -46,5 +46,14 @@ export interface SortedMap<K, V> extends Iterable<[K, V]>, Map<K, V> {
 // However, since game state can be mutated, it should at least ensure some
 // kind of ACID - rollback is not required, however, it should be reliable.
 
+// Actual game state can be stored per entity. Or it can be stored per each
+// component. Using an array for each component should be good enough, but if
+// it becomes concern, it should be a B+ tree or something.
+//
+// Index data is derived from game state, and other index can also depend on
+// other indexes. For example, a bitset for entities having a position
+// component, can be intersected with another bitset.
+// Or it can be index of values, such as quad tree, or B tree. 
+
 export interface BitSet extends Iterable<number>, Set<number> {
 }
