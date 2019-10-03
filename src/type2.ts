@@ -54,6 +54,30 @@ export interface SortedMap<K, V> extends Iterable<[K, V]>, Map<K, V> {
 // other indexes. For example, a bitset for entities having a position
 // component, can be intersected with another bitset.
 // Or it can be index of values, such as quad tree, or B tree. 
+// Index data can be updated immediately, or updated at the end of state update.
+// If we really want to optimize this, a component should only
+// be modifiable by few systems, and reindexing should be run after that.
+//
+// Let's assume a simple game, entity moves to right, and it 'dies' when
+// certain threshold has reached. There's other entities which doesn't do
+// anything.
+// 
+// update ---
+//   position ----> moveRight ----> position
+//   position ----> death ----> entityModification
+//   position ----> render
+//
+// In this case, only 'moveRight' processes the position. If we can decouple
+// component modification's reading / writing, it may be trivial to implement
+// the game, without concerning the 'order' of the system.
+//
+// However, most games are complex. Position should may be modified by other
+// systems, and other system may need to immediately react to it. While the best
+// form for a single system is (state, action) => state, it is simply not
+// possible.
+
+
+
 
 export interface BitSet extends Iterable<number>, Set<number> {
 }
