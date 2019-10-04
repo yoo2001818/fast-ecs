@@ -75,8 +75,19 @@ export interface SortedMap<K, V> extends Iterable<[K, V]>, Map<K, V> {
 // systems, and other system may need to immediately react to it. While the best
 // form for a single system is (state, action) => state, it is simply not
 // possible.
-
-
+//
+// Furthermore, game state can be modified by other than game update tick
+// itself, therefore indexing must be kept updated regardless of the timing.
+//
+// This, obviously means it needs a mechanism for keeping updated state,
+// ... which is a signal.
+//
+// However, systems need to rely on game state, otherwise it won't be
+// deterministic. Only indexes, and external outputs need to be updated this
+// way.
+//
+// But systems do need to track updated entities. For this purpose, indexes
+// can provide which entities has changed recently. 
 
 
 export interface BitSet extends Iterable<number>, Set<number> {
