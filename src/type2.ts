@@ -88,7 +88,24 @@ export interface SortedMap<K, V> extends Iterable<[K, V]>, Map<K, V> {
 //
 // But systems do need to track updated entities. For this purpose, indexes
 // can provide which entities has changed recently. 
-
+//
+// ... Since most of the bitset can be derived from signals, it'd still support
+// signals. However, it should provide interface for triggering signals.
+// Furthermore, it should provide minimal 'standard' of the signals.
+//
+// engine.createEntity({ ... }) should trigger entityCreated, componentAdded,
+// etc.
+// Signal could have partition key, i.e. componentAdded subscribers can
+// subscribe to only interested components. This should be implemented using
+// hashmap.
+//
+// While createEntity, addComponent, etc should trigger signal automatically,
+// it is required to support custom signals. It should be triggered by
+// other systems.
+//
+// Systems can trigger signals, but systems shouldn't subscribe to signals -
+// but an index should subscribe to signal, and change its indexing data.
+// System / component data should be kept using this method.
 
 export interface BitSet extends Iterable<number>, Set<number> {
 }
