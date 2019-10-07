@@ -1,35 +1,56 @@
-// Game tick is separated to two phases, update phase and apply phase.
-// Update phase actually updates the game state, and apply phase propagates
-// the updated game state.
-//
-// To do this, the update phase must set the bit flag to trigger the updates.
-// (Or it can use array, sorted set, etc)
-// Apply phase compare the previous state and current state to re-index the
-// data, or just rewrite the index completely.
-// Systems in update phase can use signals?
-
 const storage = {};
-const componentIndex = {};
-const updateSystems = [];
-const applySystems = [];
+const indexes = {};
+const signals = {};
+const systems = [];
 const update = () => {
-  updateSystems.forEach(v => v());
-  applySystems.forEach(v => v());
+  systems.forEach(v => v());
 };
 
-storage.position = new ComponentStore();
-componentIndex.position = new ComponentIndex();
+function addSystem(name, callback) {
+  // Insert system in appropriate position
+  systems.push(callback);
+}
 
-updateSystems.push(() => {
-  componentIndex.position.forEach(id => {
+storage.id = new IdStore();
+storage.position = new ComponentStore();
+indexes.position = new ComponentIndex();
+indexes.positionChanged = new ComponentIndex();
+indexes.quadtree = new QuadTree();
+
+addSystem('reset', () => {
+  indexes.positionChanged.reset();
+});
+
+addSystem('move', () => {
+  indexes.position.forEach(id => {
     storage.position.get(id).x += 1;
     storage.position.get(id).y += 1;
-    storage.position.setUpdated(id);
+    signals.emit(['componentChanged', 'position'], id);
   });
 });
 
-applySystems.push(() => {
-  componentIndex.position.changed.forEach(id => {
-    // Update quad tree
+addSystem('spawn', () => {
+  const id = storage.id.create();
+  storage.position.set(id, { x: 0, y: 0 });
+  signals.emit(['entityCreated'], id);
+  signals.emit(['componentAdded', 'position'], id);
+});
+
+addSystem('death', () => {
+  indexes.quadtree.find(-Infinity, 1000, Infinity, Infinity).forEach(id => {
+    storage.id.delete(id);
+    // TODO Optimize this; This would be O(n) where n is number of components.
+    storage.position.delete(id);
+    signals.emit(['componentDeleted', 'position'], id);
+    signals.emit(['entityDeleted'], id);
   });
 });
+
+addSystem('quadtree', () => {
+  indexes.positionChanged.forEach((id) => {
+    // Update
+    indexes.quadtree.update(id, storage.position.get(id));
+  });
+});
+
+update();
