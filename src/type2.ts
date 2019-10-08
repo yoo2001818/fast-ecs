@@ -3,6 +3,18 @@ export type Component = any;
 // Entity is completely opaque type for now.
 export type Entity = number;
 
+export interface Engine {
+  state: unknown,
+  indexes: unknown,
+  signals: unknown,
+  systems: unknown,
+
+  createEntity(): Entity,
+  deleteEntity(entity: Entity): Entity,
+
+  update(): void,
+}
+
 export interface SortedMap<K, V> extends Iterable<[K, V]>, Map<K, V> {
   size: number,
 
