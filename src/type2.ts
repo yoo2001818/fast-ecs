@@ -1,6 +1,3 @@
-export type Component = any;
-
-// Entity is completely opaque type for now.
 export type Entity = number;
 
 export interface Engine {
@@ -13,6 +10,37 @@ export interface Engine {
   deleteEntity(entity: Entity): Entity,
 
   update(): void,
+}
+
+export interface IdStore {
+  size: number,
+
+  create(): Entity,
+  has(key: Entity): boolean,
+  add(key: Entity): this,
+  delete(key: Entity): boolean,
+  clear(): void,
+
+  entries(
+    start?: Entity,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<[Entity, Entity]>,
+  keys(
+    start?: Entity,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<Entity>,
+  values(
+    start?: Entity,
+    after?: boolean,
+    reversed?: boolean,
+  ): IterableIterator<Entity>,
+  forEach(
+    callback: (value: Entity, key: Entity, map: IdStore) => void,
+    thisArg?: any,
+  ): void,
+  [Symbol.iterator](): IterableIterator<Entity>,
 }
 
 export interface SortedMap<K, V> extends Iterable<[K, V]>, Map<K, V> {
@@ -45,6 +73,21 @@ export interface SortedMap<K, V> extends Iterable<[K, V]>, Map<K, V> {
   ): void,
   [Symbol.iterator](): IterableIterator<[K, V]>,
 }
+
+export type ComponentStore<V> = SortedMap<Entity, V>;
+
+export interface BitSet extends Set<number> {
+  cardinality: number,
+  length: number,
+
+  and(set: BitSet): BitSet,
+  andNot(set: BitSet): BitSet,
+  or(set: BitSet): BitSet,
+  xor(set: BitSet): BitSet,
+  set(key: number, value: boolean): this,
+}
+
+export type ComponentIndex = BitSet;
 
 // The goal is to store the game state efficiently as possible to quickly
 // enumerate required entities, and mutate them also quickly as possible.
@@ -118,6 +161,3 @@ export interface SortedMap<K, V> extends Iterable<[K, V]>, Map<K, V> {
 // Systems can trigger signals, but systems shouldn't subscribe to signals -
 // but an index should subscribe to signal, and change its indexing data.
 // System / component data should be kept using this method.
-
-export interface BitSet extends Iterable<number>, Set<number> {
-}
