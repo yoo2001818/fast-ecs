@@ -9,6 +9,8 @@ export interface Engine {
   createEntity(): Entity,
   deleteEntity(entity: Entity): Entity,
 
+  getSignal<T>(name: string): Signal<T>,
+
   update(): void,
 }
 
@@ -88,6 +90,19 @@ export interface BitSet extends Set<number> {
 }
 
 export type ComponentIndex = BitSet;
+
+export interface Signal<T> {
+  addListener(
+    key: string | null,
+    callback: (key: string, value: T) => void,
+  ): void;
+  removeListener(
+    key: string | null,
+    callback: (key: string, value: T) => void,
+  ): void;
+
+  emit(key: string, value: T): void;
+}
 
 // The goal is to store the game state efficiently as possible to quickly
 // enumerate required entities, and mutate them also quickly as possible.
