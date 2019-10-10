@@ -11,7 +11,15 @@ export interface Engine {
 
   getSignal<T>(name: string): Signal<T>,
 
+  addSystem(name: string, config: SystemConfig): void,
+
   update(): void,
+}
+
+export interface SystemConfig {
+  onUpdate: () => void,
+  after: string[],
+  before: string[],
 }
 
 export interface IdStore {
