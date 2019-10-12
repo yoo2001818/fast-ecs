@@ -13,11 +13,19 @@ export interface Engine {
 
   addSystem(name: string, config: SystemConfig): void,
 
-  update(): void,
+  // If Engine could understand all index types, it could return an appropriate
+  // index when a schema is given.
+  addIndex(name: string, value: any): void,
+  getIndex(name: string): any,
+
+  addState(name: string, value: any): void,
+  getState(name: string): any,
+
+  update(action: any): void,
 }
 
 export interface SystemConfig {
-  onUpdate: () => void,
+  onUpdate: (action: any) => void,
   after: string[],
   before: string[],
 }
