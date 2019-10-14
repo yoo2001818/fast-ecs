@@ -1,12 +1,18 @@
 export default class Signal<T> {
-  listeners: ((event: T) => void)[] = [];
-  add(listener: (event: T) => void): void {
-    this.listeners.push(listener);
+  addListener(
+    key: string | null,
+    callback: (key: string, value: T) => void,
+  ): void {
+    throw new Error("Method not implemented.");
   }
-  remove(listener: (event: T) => void): void {
-    this.listeners = this.listeners.filter(v => v !== listener);
+  removeListener(
+    key: string | null,
+    callback: (key: string, value: T) => void,
+  ): void {
+    throw new Error("Method not implemented.");
   }
-  emit(event: T): void {
-    this.listeners.forEach(listener => listener(event));
+
+  emit(key: string, value: T): void {
+    throw new Error("Method not implemented.");
   }
 }
