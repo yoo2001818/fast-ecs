@@ -2,6 +2,7 @@ export default class BitSet implements Set<number> {
   size: number;
   cardinality: number;
   length: number;
+  buffer: Int32Array;
 
   add(value: number): this {
     throw new Error("Method not implemented.");
@@ -33,7 +34,7 @@ export default class BitSet implements Set<number> {
   values(): IterableIterator<number> {
     throw new Error("Method not implemented.");
   }
-  [Symbol.toStringTag]: string;
+  [Symbol.toStringTag]: string = 'BitSet';
   and(set: BitSet): BitSet {
     throw new Error("Method not implemented.");
   }

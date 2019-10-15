@@ -15,13 +15,19 @@ export interface Engine {
 
   // If Engine could understand all index types, it could return an appropriate
   // index when a schema is given.
-  addIndex(name: string, value: any): void,
+  addIndex(name: string, value: IndexConfig): void,
   getIndex(name: string): any,
 
   addState(name: string, value: any): void,
   getState(name: string): any,
 
   update(action: any): void,
+}
+
+export interface IndexConfig {
+  onRegister(): void,
+  onUnregister(): void,
+  onUpdate: (action: any) => void,
 }
 
 export interface SystemConfig {
