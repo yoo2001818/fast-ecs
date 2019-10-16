@@ -2,19 +2,29 @@ export default class BitSet implements Set<number> {
   size: number;
   cardinality: number;
   length: number;
-  buffer: Int32Array;
+  pages: Int32Array[] = [];
 
-  add(value: number): this {
-    throw new Error("Method not implemented.");
-  }
   clear(): void {
     throw new Error("Method not implemented.");
   }
-  delete(value: number): boolean {
-    throw new Error("Method not implemented.");
-  }
   set(key: number, value: boolean): this {
-    throw new Error("Method not implemented.");
+    let byte = key / 32 | 0;
+    let pos = key % 32;
+    let pageId = byte / 1024 | 0;
+    let pageOffset = byte % 1024;
+    if (this.pages[pageId] == null) {
+      this.pages[pageId] = new Int32Array(1024);
+    }
+    this.pages[pageId][pageOffset] |= 1 << (pos - 1);
+    return this;
+  }
+  add(value: number): this {
+    return this.set(value, true);
+  }
+  delete(value: number): boolean {
+    this.set(value, false);
+    // TODO Check if bit was true
+    return true;
   }
   forEach(callbackfn: (value: number, value2: number, set: Set<number>) => void, thisArg?: any): void {
     throw new Error("Method not implemented.");
