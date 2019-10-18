@@ -4,18 +4,27 @@ export default class BitSet implements Set<number> {
   length: number;
   pages: Int32Array[] = [];
 
+  _getPage(pageId: number): Int32Array {
+    let page = this.pages[pageId];
+    if (page == null) this.pages[pageId] = page = new Int32Array(1024);
+    return page;
+  }
+  _getPageIfExists(pageId: number): Int32Array | null {
+    let page = this.pages[pageId];
+    return page;
+  }
+
   clear(): void {
-    throw new Error("Method not implemented.");
+    this.pages = [];
   }
   set(key: number, value: boolean): this {
-    let byte = key / 32 | 0;
-    let pos = key % 32;
-    let pageId = byte / 1024 | 0;
-    let pageOffset = byte % 1024;
-    if (this.pages[pageId] == null) {
-      this.pages[pageId] = new Int32Array(1024);
-    }
-    this.pages[pageId][pageOffset] |= 1 << (pos - 1);
+    const byte = key >> 5;
+    const pos = key & 31;
+    const pageId = byte >> 10;
+    const pageOffset = byte & 1023;
+    const page = this._getPage(pageId);
+    if (value) page[pageOffset] |= 1 << pos;
+    else page[pageOffset] &= ~(1 << pos);
     return this;
   }
   add(value: number): this {
@@ -26,23 +35,22 @@ export default class BitSet implements Set<number> {
     // TODO Check if bit was true
     return true;
   }
-  forEach(callbackfn: (value: number, value2: number, set: Set<number>) => void, thisArg?: any): void {
-    throw new Error("Method not implemented.");
-  }
   has(key: number): boolean {
     return this.get(key);
   }
   get(key: number): boolean {
-    let byte = key / 32 | 0;
-    let pos = key % 32;
-    let pageId = byte / 1024 | 0;
-    let pageOffset = byte % 1024;
-    if (this.pages[pageId] == null) {
-      return false;
-    }
-    return (this.pages[pageId][pageOffset] & (1 << (pos - 1))) !== 0;
+    const byte = key >> 5;
+    const pos = key & 31;
+    const pageId = byte >> 10;
+    const pageOffset = byte & 1023;
+    const page = this._getPageIfExists(pageId);
+    if (page == null) return false;
+    return (page[pageOffset] & (1 << pos)) !== 0;
   }
   [Symbol.iterator](): IterableIterator<number> {
+    throw new Error("Method not implemented.");
+  }
+  forEach(callbackfn: (value: number, value2: number, set: Set<number>) => void, thisArg?: any): void {
     throw new Error("Method not implemented.");
   }
   entries(): IterableIterator<[number, number]> {
