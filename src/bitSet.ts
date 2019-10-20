@@ -53,14 +53,27 @@ export default class BitSet implements Set<number> {
   forEach(callbackfn: (value: number, value2: number, set: Set<number>) => void, thisArg?: any): void {
     throw new Error("Method not implemented.");
   }
-  entries(): IterableIterator<[number, number]> {
-    throw new Error("Method not implemented.");
+  *entries(): IterableIterator<[number, number]> {
+    for (let value of this.values()) {
+      yield [value, value];
+    }
   }
   keys(): IterableIterator<number> {
-    throw new Error("Method not implemented.");
+    return this.values();
   }
-  values(): IterableIterator<number> {
-    throw new Error("Method not implemented.");
+  *values(): IterableIterator<number> {
+    for (let i = 0; i < this.pages.length; i += 1) {
+      const page = this.pages[i];
+      for (let j = 0; j < page.length; j += 1) {
+        let value = page[j];
+        let pos = 0;
+        while (value !== 0) {
+          if (value & 1) yield pos + j * 32 + i * 1024 * 32;
+          pos += 1;
+          value >>= 1;
+        }
+      }
+    }
   }
   [Symbol.toStringTag]: string = 'BitSet';
   and(set: BitSet): BitSet {
