@@ -3,6 +3,19 @@ export default class BitSet implements Set<number> {
   cardinality: number;
   length: number;
   pages: Int32Array[] = [];
+  // Skip bitset; inspired from https://github.com/amethyst/hibitset
+  // Each layer should contain 4 values from previous buffer.
+  // Layer 3: --------------------------------------1
+  // Layer 2: ------------------1 ------------------0
+  // Layer 1: ---0 ---1 ---0 ---0 ---0 ---0 ---0 ---0
+  // Layer 0: 0000 0001 0000 0000 0000 0000 0000 0000
+  // Layer 0 is stored inside 'pages', and other layers are considered
+  // 'indexes'.
+  // Layer 0 is 4096 bytes.
+  // Layer 1 is 1024 bytes.
+  // Layer 2 is 256 bytes.
+  // Layer 3 is 64 bytes.
+  skipPages: Int32Array[] = [];
 
   _getPage(pageId: number): Int32Array {
     let page = this.pages[pageId];
