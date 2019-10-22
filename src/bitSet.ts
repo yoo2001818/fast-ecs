@@ -11,15 +11,15 @@ export default class BitSet implements Set<number> {
   // Layer 0: 0000 0001 0000 0000 0000 0000 0000 0000
   // Layer 0 is stored inside 'pages', and other layers are considered
   // 'indexes'.
-  // Layer 0 is 4096 bytes.
-  // Layer 1 is 1024 bytes.
-  // Layer 2 is 256 bytes.
-  // Layer 3 is 64 bytes.
-  skipPages: Int32Array[] = [];
+  // Layer 0 is 1024 bytes.
+  // Layer 1 is 256 bytes.
+  // Layer 2 is 64 bytes.
+  // Layer 3 is 16 bytes.
+  skipPages: Int32Array[][] = [[], [], []];
 
   _getPage(pageId: number): Int32Array {
     let page = this.pages[pageId];
-    if (page == null) this.pages[pageId] = page = new Int32Array(1024);
+    if (page == null) this.pages[pageId] = page = new Int32Array(256);
     return page;
   }
   _getPageIfExists(pageId: number): Int32Array | null {
@@ -27,17 +27,32 @@ export default class BitSet implements Set<number> {
     return page;
   }
 
+  _getSkipPage(layer: number, pageId: number): Int32Array {
+    let page = this.skipPages[layer][pageId];
+    if (page == null) {
+      this.skipPages[layer][pageId] = page = new Int32Array(256 >> (layer * 2));
+    }
+    return page;
+  }
+
   clear(): void {
     this.pages = [];
+    this.skipPages = [];
   }
   set(key: number, value: boolean): this {
     const byte = key >> 5;
     const pos = key & 31;
-    const pageId = byte >> 10;
-    const pageOffset = byte & 1023;
+    const pageId = byte >> 8;
+    const pageOffset = byte & 255;
     const page = this._getPage(pageId);
     if (value) page[pageOffset] |= 1 << pos;
     else page[pageOffset] &= ~(1 << pos);
+    if (value) {
+      for (let i = 0; i < 3; i += 1) {
+        const skipPage = this._getSkipPage(i, pageId);
+        skipPage[pageOffset] |= 1 << pos;
+      }
+    }
     return this;
   }
   add(value: number): this {
@@ -54,8 +69,8 @@ export default class BitSet implements Set<number> {
   get(key: number): boolean {
     const byte = key >> 5;
     const pos = key & 31;
-    const pageId = byte >> 10;
-    const pageOffset = byte & 1023;
+    const pageId = byte >> 8;
+    const pageOffset = byte & 255;
     const page = this._getPageIfExists(pageId);
     if (page == null) return false;
     return (page[pageOffset] & (1 << pos)) !== 0;
@@ -81,7 +96,7 @@ export default class BitSet implements Set<number> {
         let value = page[j];
         let pos = 0;
         while (value !== 0) {
-          if (value & 1) yield pos + j * 32 + i * 1024 * 32;
+          if (value & 1) yield pos + j * 32 + i * 256 * 32;
           pos += 1;
           value >>= 1;
         }
