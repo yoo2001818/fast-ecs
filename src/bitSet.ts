@@ -50,7 +50,10 @@ export default class BitSet implements Set<number> {
     if (value) {
       for (let i = 0; i < 3; i += 1) {
         const skipPage = this._getSkipPage(i, pageId);
-        skipPage[pageOffset] |= 1 << pos;
+        const skipKey = (key & 8191) >> ((i + 1) * 2);
+        const skipOffset = skipKey >> 5;
+        const skipPos = skipKey & 31;
+        skipPage[skipOffset] |= 1 << skipPos;
       }
     }
     return this;
@@ -76,7 +79,7 @@ export default class BitSet implements Set<number> {
     return (page[pageOffset] & (1 << pos)) !== 0;
   }
   [Symbol.iterator](): IterableIterator<number> {
-    throw new Error("Method not implemented.");
+    return this.values();
   }
   forEach(callbackfn: (value: number, value2: number, set: Set<number>) => void, thisArg?: any): void {
     throw new Error("Method not implemented.");
@@ -92,13 +95,14 @@ export default class BitSet implements Set<number> {
   *values(): IterableIterator<number> {
     for (let i = 0; i < this.pages.length; i += 1) {
       const page = this.pages[i];
+      if (page == null) continue;
       for (let j = 0; j < page.length; j += 1) {
         let value = page[j];
         let pos = 0;
         while (value !== 0) {
           if (value & 1) yield pos + j * 32 + i * 256 * 32;
           pos += 1;
-          value >>= 1;
+          value >>>= 1;
         }
       }
     }
