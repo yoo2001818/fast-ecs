@@ -96,6 +96,25 @@ export default class BitSet implements Set<number> {
     for (let i = 0; i < this.pages.length; i += 1) {
       const page = this.pages[i];
       if (page == null) continue;
+      let pos = 0;
+      while (pos < 256 * 32) {
+        for (let j = 0; j < 3; j += 1) {
+          if (pos % ((j + 1) * 2) === 0) {
+            const skipKey = (pos & 8191) >> ((j + 1) * 2);
+            const skipOffset = skipKey >> 5;
+            const skipPos = skipKey & 31;
+            if ((this.skipPages[j][i][skipOffset] & (1 << skipPos)) === 0) {
+              pos += 1 << ((j + 1) * 2);
+              continue;
+            }
+          }
+        }
+        let offset = pos >> 5;
+        let bitPos = pos & 31;
+        if (page[offset] & (1 << bitPos)) yield pos;
+        pos += 1;
+      }
+      /*
       for (let j = 0; j < page.length; j += 1) {
         let value = page[j];
         let pos = 0;
@@ -105,6 +124,7 @@ export default class BitSet implements Set<number> {
           value >>>= 1;
         }
       }
+      */
     }
   }
   [Symbol.toStringTag]: string = 'BitSet';
