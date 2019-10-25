@@ -13,6 +13,7 @@ describe('BitSet', () => {
       for (let i = 0; i < 1000; i += 1) {
         set.set(i * 100000, true);
       }
+      [...set];
     });
     it('should correct set value to 0', () => {
       let set = new BitSet();
