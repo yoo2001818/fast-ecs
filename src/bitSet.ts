@@ -40,13 +40,12 @@ export default class BitSet implements Set<number> {
     this.skipPages = [];
   }
   set(key: number, value: boolean): this {
-    const byte = key >> 5;
-    const pos = key & 31;
-    const pageId = byte >> 8;
-    const pageOffset = byte & 255;
+    const pageId = key >> 13;
+    const pageByte = key >> 5;
+    const pageOffset = pageByte & 255;
     const page = this._getPage(pageId);
-    if (value) page[pageOffset] |= 1 << pos;
-    else page[pageOffset] &= ~(1 << pos);
+    if (value) page[pageOffset] |= 1 << (key & 31);
+    else page[pageOffset] &= ~(1 << (key & 31));
     if (value) {
       for (let i = 0; i < 3; i += 1) {
         const skipPage = this._getSkipPage(i, pageId);
@@ -70,13 +69,12 @@ export default class BitSet implements Set<number> {
     return this.get(key);
   }
   get(key: number): boolean {
-    const byte = key >> 5;
-    const pos = key & 31;
-    const pageId = byte >> 8;
-    const pageOffset = byte & 255;
+    const pageId = key >> 13;
+    const pageByte = key >> 5;
+    const pageOffset = pageByte & 255;
     const page = this._getPageIfExists(pageId);
     if (page == null) return false;
-    return (page[pageOffset] & (1 << pos)) !== 0;
+    return (page[pageOffset] & (1 << (key & 31))) !== 0;
   }
   [Symbol.iterator](): IterableIterator<number> {
     return this.values();
