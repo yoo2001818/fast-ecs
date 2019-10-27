@@ -11,10 +11,10 @@ export default class BitSet implements Set<number> {
   // Layer 0: 0000 0001 0000 0000 0000 0000 0000 0000
   // Layer 0 is stored inside 'pages', and other layers are considered
   // 'indexes'.
-  // Layer 0 is 1024 bytes.
-  // Layer 1 is 256 bytes.
-  // Layer 2 is 64 bytes.
-  // Layer 3 is 16 bytes.
+  // Layer 0 is 1024 bytes - 1 bit per 1 bit.
+  // Layer 1 is 256 bytes - 4 bits per 1 bit.
+  // Layer 2 is 64 bytes - 16 bits per 1 bit.
+  // Layer 3 is 16 bytes - 64 bits per 1 bit.
   skipPages: Int32Array[][] = [[], [], []];
 
   _getPage(pageId: number): Int32Array {
@@ -94,7 +94,14 @@ export default class BitSet implements Set<number> {
     for (let i = 0; i < this.pages.length; i += 1) {
       const page = this.pages[i];
       if (page == null) continue;
+      const skipPage1 = this.skipPages[0][i];
+      const skipPage2 = this.skipPages[1][i];
+      const skipPage3 = this.skipPages[2][i];
       for (let j = 0; j < page.length; j += 1) {
+        if (j % 2 === 0 && skipPage3[j >> 1]) {
+          j += 1;
+          continue;
+        }
         let value = page[j];
         let pos = 0;
         while (value !== 0) {
