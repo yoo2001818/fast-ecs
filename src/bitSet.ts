@@ -1,3 +1,9 @@
+function read(input: Int32Array, pos: number): boolean {
+  const byte = pos >> 5;
+  const offset = pos & 31;
+  return (input[byte] & (1 << offset)) !== 0;
+}
+
 export default class BitSet implements Set<number> {
   size: number;
   cardinality: number;
@@ -98,18 +104,18 @@ export default class BitSet implements Set<number> {
       const skipPage2 = this.skipPages[1][i];
       const skipPage3 = this.skipPages[2][i];
       for (let j = 0; j < page.length; j += 1) {
-        if (j % 2 === 0 && !skipPage3[j >> 1]) {
+        if (j % 2 === 0 && !read(skipPage3, j >> 1)) {
           j += 1;
           continue;
         }
         let value = page[j];
         let pos = 0;
         while (value !== 0) {
-          if ((pos & 15) === 0 && !skipPage2[(j << 1) + (pos >> 4)]) {
+          if ((pos & 15) === 0 && !read(skipPage2, (j << 1) + (pos >> 4))) {
             pos += 16;
             value >>>= 16;
           }
-          if ((pos & 3) === 0 && !skipPage1[(j << 3) + (pos >> 2)]) {
+          if ((pos & 3) === 0 && !read(skipPage1, (j << 3) + (pos >> 2))) {
             pos += 4;
             value >>>= 4;
           }
