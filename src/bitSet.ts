@@ -103,14 +103,32 @@ export default class BitSet implements Set<number> {
       const skipPage1 = this.skipPages[0][i];
       const skipPage2 = this.skipPages[1][i];
       const skipPage3 = this.skipPages[2][i];
+      let skipPage1Val;
+      let skipPage2Val;
+      let skipPage3Val;
+      // skip page 1: 0.125 bytes per 1 bit, wraps every 4 byte
+      // skip page 2: 0.5 bytes per 1 bit, wraps every 16 byte
+      // skip page 3: 2 bytes per 1 bit, wraps every 64 byte
       for (let j = 0; j < page.length; j += 1) {
-        if (j % 2 === 0 && !read(skipPage3, j >> 1)) {
+        if (j % 64 === 0) skipPage3Val = skipPage3[j / 64 | 0];
+        if (j % 16 === 0) skipPage2Val = skipPage2[j / 16 | 0];
+        if (j % 4 === 0) skipPage1Val = skipPage1[j / 4 | 0];
+        if (j % 2 === 0 && !(skipPage3Val & 1)) {
           j += 1;
+          skipPage1Val >>>= 16;
+          skipPage2Val >>>= 4;
+          skipPage3Val >>>= 1;
           continue;
         }
         let value = page[j];
         let pos = 0;
         while (value !== 0) {
+          if (pos % 16 === 0) {
+
+          }
+          if (pos % 4 === 0) {
+
+          }
           if ((pos & 15) === 0 && !read(skipPage2, (j << 1) + (pos >> 4))) {
             pos += 16;
             value >>>= 16;
@@ -122,6 +140,7 @@ export default class BitSet implements Set<number> {
           if (value & 1) yield pos + j * 32 + i * 256 * 32;
           pos += 1;
           value >>>= 1;
+          skipPage3Val >>>= 1;
         }
       }
     }
