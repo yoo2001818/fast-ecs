@@ -113,34 +113,41 @@ export default class BitSet implements Set<number> {
         if (j % 64 === 0) skipPage3Val = skipPage3[j / 64 | 0];
         if (j % 16 === 0) skipPage2Val = skipPage2[j / 16 | 0];
         if (j % 4 === 0) skipPage1Val = skipPage1[j / 4 | 0];
-        if (j % 2 === 0 && !(skipPage3Val & 1)) {
-          j += 1;
-          skipPage1Val >>>= 16;
-          skipPage2Val >>>= 4;
+        if (j % 2 === 0) {
+          if (!(skipPage3Val & 1)) {
+            j += 1;
+            skipPage1Val >>>= 16;
+            skipPage2Val >>>= 4;
+            skipPage3Val >>>= 1;
+            continue;
+          }
           skipPage3Val >>>= 1;
-          continue;
         }
         let value = page[j];
         let pos = 0;
         while (value !== 0) {
           if (pos % 16 === 0) {
-
+            if (!(skipPage2Val & 1)) {
+              skipPage1Val >>>= 4;
+              skipPage2Val >>>= 1;
+              pos += 16;
+              value >>>= 16;
+              continue;
+            }
+            skipPage2Val >>>= 1;
           }
           if (pos % 4 === 0) {
-
-          }
-          if ((pos & 15) === 0 && !read(skipPage2, (j << 1) + (pos >> 4))) {
-            pos += 16;
-            value >>>= 16;
-          }
-          if ((pos & 3) === 0 && !read(skipPage1, (j << 3) + (pos >> 2))) {
-            pos += 4;
-            value >>>= 4;
+            if (!(skipPage1Val & 1)) {
+              skipPage1Val >>>= 1;
+              pos += 4;
+              value >>>= 4;
+              continue;
+            }
+            skipPage1Val >>>= 1;
           }
           if (value & 1) yield pos + j * 32 + i * 256 * 32;
           pos += 1;
           value >>>= 1;
-          skipPage3Val >>>= 1;
         }
       }
     }
