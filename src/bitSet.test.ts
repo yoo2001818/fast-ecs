@@ -10,8 +10,8 @@ describe('BitSet', () => {
       expect(set.get(1023)).toBe(true);
       set.set(65535, true);
       expect(set.get(65535)).toBe(true);
-      for (let i = 0; i < 1000; i += 1) {
-        set.set(i * 100000, true);
+      for (let i = 0; i < 100000; i += 1) {
+        set.set(i * 100, true);
       }
       [...set];
     });

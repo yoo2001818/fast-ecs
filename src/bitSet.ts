@@ -1,9 +1,3 @@
-function read(input: Int32Array, pos: number): boolean {
-  const byte = pos >> 5;
-  const offset = pos & 31;
-  return (input[byte] & (1 << offset)) !== 0;
-}
-
 export default class BitSet implements Set<number> {
   size: number;
   cardinality: number;
@@ -96,7 +90,7 @@ export default class BitSet implements Set<number> {
   keys(): IterableIterator<number> {
     return this.values();
   }
-  *values(): IterableIterator<number> {
+  *values(slow: boolean = false): IterableIterator<number> {
     for (let i = 0; i < this.pages.length; i += 1) {
       const page = this.pages[i];
       if (page == null) continue;
@@ -110,40 +104,44 @@ export default class BitSet implements Set<number> {
       // skip page 2: 0.5 bytes per 1 bit, wraps every 16 byte
       // skip page 3: 2 bytes per 1 bit, wraps every 64 byte
       for (let j = 0; j < page.length; j += 1) {
-        if (j % 64 === 0) skipPage3Val = skipPage3[j / 64 | 0];
-        if (j % 16 === 0) skipPage2Val = skipPage2[j / 16 | 0];
-        if (j % 4 === 0) skipPage1Val = skipPage1[j / 4 | 0];
-        if (j % 2 === 0) {
-          if (!(skipPage3Val & 1)) {
-            j += 1;
-            skipPage1Val >>>= 16;
-            skipPage2Val >>>= 4;
+        if (!slow) {
+          if (j % 64 === 0) skipPage3Val = skipPage3[j / 64 | 0];
+          if (j % 16 === 0) skipPage2Val = skipPage2[j / 16 | 0];
+          if (j % 4 === 0) skipPage1Val = skipPage1[j / 4 | 0];
+          if (j % 2 === 0) {
+            if (!(skipPage3Val & 1)) {
+              j += 1;
+              skipPage1Val >>>= 16;
+              skipPage2Val >>>= 4;
+              skipPage3Val >>>= 1;
+              continue;
+            }
             skipPage3Val >>>= 1;
-            continue;
           }
-          skipPage3Val >>>= 1;
         }
         let value = page[j];
         let pos = 0;
         while (value !== 0) {
-          if (pos % 16 === 0) {
-            if (!(skipPage2Val & 1)) {
-              skipPage1Val >>>= 4;
+          if (!slow) {
+            if (pos % 16 === 0) {
+              if (!(skipPage2Val & 1)) {
+                skipPage1Val >>>= 4;
+                skipPage2Val >>>= 1;
+                pos += 16;
+                value >>>= 16;
+                continue;
+              }
               skipPage2Val >>>= 1;
-              pos += 16;
-              value >>>= 16;
-              continue;
             }
-            skipPage2Val >>>= 1;
-          }
-          if (pos % 4 === 0) {
-            if (!(skipPage1Val & 1)) {
+            if (pos % 4 === 0) {
+              if (!(skipPage1Val & 1)) {
+                skipPage1Val >>>= 1;
+                pos += 4;
+                value >>>= 4;
+                continue;
+              }
               skipPage1Val >>>= 1;
-              pos += 4;
-              value >>>= 4;
-              continue;
             }
-            skipPage1Val >>>= 1;
           }
           if (value & 1) yield pos + j * 32 + i * 256 * 32;
           pos += 1;
@@ -154,13 +152,46 @@ export default class BitSet implements Set<number> {
   }
   [Symbol.toStringTag]: string = 'BitSet';
   and(set: BitSet): BitSet {
-    throw new Error("Method not implemented.");
+    let output = new BitSet();
+    const minPages = Math.min(set.pages.length, this.pages.length);
+    for (let i = 0; i < minPages; i += 1) {
+      let aPage = this.pages[i];
+      let bPage = set.pages[i];
+      if (aPage == null || bPage == null) {
+        continue;
+      }
+      let outPage = new Int32Array(256);
+      for (let j = 0; j < outPage.length; j += 1) {
+        outPage[j] = aPage[j] & bPage[j];
+      }
+      output.pages[i] = outPage;
+    }
+    return output;
   }
   andNot(set: BitSet): BitSet {
     throw new Error("Method not implemented.");
   }
   or(set: BitSet): BitSet {
-    throw new Error("Method not implemented.");
+    let output = new BitSet();
+    const maxPages = Math.max(set.pages.length, this.pages.length);
+    for (let i = 0; i < maxPages; i += 1) {
+      let aPage = this.pages[i];
+      let bPage = set.pages[i];
+      if (aPage == null) {
+        output.pages[i] = bPage;
+        continue;
+      }
+      if (bPage == null) {
+        output.pages[i] = aPage;
+        continue;
+      }
+      let outPage = new Int32Array(256);
+      for (let j = 0; j < outPage.length; j += 1) {
+        outPage[j] = aPage[j] | bPage[j];
+      }
+      output.pages[i] = outPage;
+    }
+    return output;
   }
   xor(set: BitSet): BitSet {
     throw new Error("Method not implemented.");
