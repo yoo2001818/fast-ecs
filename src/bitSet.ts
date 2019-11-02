@@ -194,6 +194,25 @@ export default class BitSet implements Set<number> {
     return output;
   }
   xor(set: BitSet): BitSet {
-    throw new Error("Method not implemented.");
+    let output = new BitSet();
+    const maxPages = Math.max(set.pages.length, this.pages.length);
+    for (let i = 0; i < maxPages; i += 1) {
+      let aPage = this.pages[i];
+      let bPage = set.pages[i];
+      if (aPage == null) {
+        output.pages[i] = bPage;
+        continue;
+      }
+      if (bPage == null) {
+        output.pages[i] = aPage;
+        continue;
+      }
+      let outPage = new Int32Array(256);
+      for (let j = 0; j < outPage.length; j += 1) {
+        outPage[j] = aPage[j] ^ bPage[j];
+      }
+      output.pages[i] = outPage;
+    }
+    return output;
   }
 }
