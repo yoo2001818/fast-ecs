@@ -1,3 +1,6 @@
+const LAYER1_SIEVE = 0x15;
+const LAYER2_SIEVE = 0xFF;
+
 export default class BitSet implements Set<number> {
   size: number;
   cardinality: number;
@@ -30,9 +33,69 @@ export default class BitSet implements Set<number> {
   _getSkipPage(layer: number, pageId: number): Int32Array {
     let page = this.skipPages[layer][pageId];
     if (page == null) {
-      this.skipPages[layer][pageId] = page = new Int32Array(256 >> (layer * 2));
+      this.skipPages[layer][pageId] = page = new Int32Array(64 >> (layer * 2));
     }
     return page;
+  }
+  _generateSkipPage(): void {
+    for (let i = 0; i < this.pages.length; i += 1) {
+      let page = this.pages[i];
+      if (page == null) continue;
+      {
+        let skipPage = new Int32Array(64);
+        this.skipPages[0][i] = skipPage;
+        let pos = 0;
+        let offset = 0;
+        // Run bytes through sieve.
+        for (let j = 0; j < page.length; j += 1) {
+          let byte = page[j];
+          if (offset >= 32) {
+            offset = 0;
+            pos += 1;
+          }
+          while (byte !== 0) {
+            if (LAYER1_SIEVE & byte) skipPage[pos] |= 1 << offset;
+            offset += 1;
+            byte >>>= 4;
+          }
+        }
+      }
+      {
+        let skipPage = new Int32Array(16);
+        this.skipPages[1][i] = skipPage;
+        let pos = 0;
+        let offset = 0;
+        // Run bytes through sieve.
+        for (let j = 0; j < page.length; j += 1) {
+          let byte = page[j];
+          if (offset >= 32) {
+            offset = 0;
+            pos += 1;
+          }
+          while (byte !== 0) {
+            if (LAYER2_SIEVE & byte) skipPage[pos] |= 1 << offset;
+            offset += 1;
+            byte >>>= 16;
+          }
+        }
+      }
+      {
+        let skipPage = new Int32Array(4);
+        this.skipPages[2][i] = skipPage;
+        let pos = 0;
+        let offset = 0;
+        // Run bytes through sieve.
+        for (let j = 0; j < page.length; j += 1) {
+          let byte = page[j];
+          if (offset >= 32) {
+            offset = 0;
+            pos += 1;
+          }
+          if (byte) skipPage[pos] |= 1 << offset;
+          offset += 1;
+        }
+      }
+    }
   }
 
   clear(): void {
@@ -165,6 +228,7 @@ export default class BitSet implements Set<number> {
         outPage[j] = aPage[j] & bPage[j];
       }
       output.pages[i] = outPage;
+      output._generateSkipPage();
     }
     return output;
   }
@@ -190,6 +254,7 @@ export default class BitSet implements Set<number> {
         outPage[j] = aPage[j] | bPage[j];
       }
       output.pages[i] = outPage;
+      output._generateSkipPage();
     }
     return output;
   }
@@ -212,6 +277,7 @@ export default class BitSet implements Set<number> {
         outPage[j] = aPage[j] ^ bPage[j];
       }
       output.pages[i] = outPage;
+      output._generateSkipPage();
     }
     return output;
   }
