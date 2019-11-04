@@ -142,8 +142,13 @@ export default class BitSet implements Set<number> {
   [Symbol.iterator](): IterableIterator<number> {
     return this.values();
   }
-  forEach(callbackfn: (value: number, value2: number, set: Set<number>) => void, thisArg?: any): void {
-    throw new Error("Method not implemented.");
+  forEach(
+    callbackfn: (value: number, value2: number, set: Set<number>) => void,
+    thisArg?: any,
+  ): void {
+    for (let value of this.values()) {
+      callbackfn.call(thisArg, value, value, this);
+    }
   }
   *entries(): IterableIterator<[number, number]> {
     for (let value of this.values()) {
