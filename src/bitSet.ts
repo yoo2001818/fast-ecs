@@ -233,12 +233,29 @@ export default class BitSet implements Set<number> {
         outPage[j] = aPage[j] & bPage[j];
       }
       output.pages[i] = outPage;
-      output._generateSkipPage();
     }
+    output._generateSkipPage();
     return output;
   }
+  // this AND ~set
   andNot(set: BitSet): BitSet {
-    throw new Error("Method not implemented.");
+    let output = new BitSet();
+    for (let i = 0; i < this.pages.length; i += 1) {
+      let aPage = this.pages[i];
+      let bPage = set.pages[i];
+      if (aPage == null) continue;
+      if (bPage == null) {
+        output.pages[i] = aPage;
+        continue;
+      }
+      let outPage = new Int32Array(256);
+      for (let j = 0; j < outPage.length; j += 1) {
+        outPage[j] = aPage[j] & ~bPage[j];
+      }
+      output.pages[i] = outPage;
+    }
+    output._generateSkipPage();
+    return output;
   }
   or(set: BitSet): BitSet {
     let output = new BitSet();
@@ -259,8 +276,8 @@ export default class BitSet implements Set<number> {
         outPage[j] = aPage[j] | bPage[j];
       }
       output.pages[i] = outPage;
-      output._generateSkipPage();
     }
+    output._generateSkipPage();
     return output;
   }
   xor(set: BitSet): BitSet {
@@ -282,8 +299,8 @@ export default class BitSet implements Set<number> {
         outPage[j] = aPage[j] ^ bPage[j];
       }
       output.pages[i] = outPage;
-      output._generateSkipPage();
     }
+    output._generateSkipPage();
     return output;
   }
 }
