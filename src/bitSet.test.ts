@@ -40,4 +40,14 @@ describe('BitSet', () => {
   describe('#has', () => {
     
   });
+  describe('#and', () => {
+  });
+  describe('#andNot', () => {
+  });
+  describe('#or', () => {
+  });
+  describe('#xor', () => {
+  });
+  describe('#forEach', () => {
+  });
 });
