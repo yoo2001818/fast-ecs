@@ -120,6 +120,9 @@ export default class BitSet implements Set<number> {
     }
     return this;
   }
+  setWord(wordPos: number, value: number): void {
+
+  }
   add(value: number): this {
     return this.set(value, true);
   }
@@ -138,6 +141,9 @@ export default class BitSet implements Set<number> {
     const page = this._getPageIfExists(pageId);
     if (page == null) return false;
     return (page[pageOffset] & (1 << (key & 31))) !== 0;
+  }
+  getWord(wordPos: number): number {
+
   }
   [Symbol.iterator](): IterableIterator<number> {
     return this.values();
