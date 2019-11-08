@@ -121,7 +121,18 @@ export default class BitSet implements Set<number> {
     return this;
   }
   setWord(wordPos: number, value: number): void {
-
+    const pageId = wordPos / 256 | 0;
+    const page = this._getPage(pageId);
+    page[wordPos % 256] = value;
+    // Rebuild skip page
+    // Layer 1 and 2 should be set to match provided word. This should be done
+    // by using bit bliting - AND with mask and OR with given value.
+    for (let i = 0; i < 2; i += 1) {
+      const skipPage = this._getSkipPage(i, pageId);
+      skipPage[0] |= 1 << 0;
+    }
+    // Layer 3 should be set if only one bit it set; it is shared between
+    // two words.
   }
   add(value: number): this {
     return this.set(value, true);
@@ -143,7 +154,10 @@ export default class BitSet implements Set<number> {
     return (page[pageOffset] & (1 << (key & 31))) !== 0;
   }
   getWord(wordPos: number): number {
-
+    const pageId = wordPos / 256 | 0;
+    const page = this._getPageIfExists(pageId);
+    if (page == null) return 0;
+    return page[wordPos % 256];
   }
   [Symbol.iterator](): IterableIterator<number> {
     return this.values();
