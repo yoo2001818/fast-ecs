@@ -129,7 +129,15 @@ export default class BitSet implements Set<number> {
     // by using bit bliting - AND with mask and OR with given value.
     for (let i = 0; i < 2; i += 1) {
       const skipPage = this._getSkipPage(i, pageId);
-      skipPage[0] |= 1 << 0;
+      let blit = 0;
+      while (wordPos) {
+        if (wordPos & 0xf) blit |= 1;
+        blit <<= 1;
+        wordPos >>>= 4;
+      }
+      const skipPos = wordPos >> ((i + 1) * 2);
+      const skipOffset = wordPos % ((1 << ((i + 1) * 2)) - 1);
+      skipPage[skipPos] |= 1 << skipOffset;
     }
     // Layer 3 should be set if only one bit it set; it is shared between
     // two words.
