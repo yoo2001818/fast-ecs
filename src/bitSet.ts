@@ -1,4 +1,4 @@
-const LAYER1_SIEVE = 0x15;
+const LAYER1_SIEVE = 0xF;
 const LAYER2_SIEVE = 0xFF;
 
 export default class BitSet implements Set<number> {
@@ -127,20 +127,42 @@ export default class BitSet implements Set<number> {
     // Rebuild skip page
     // Layer 1 and 2 should be set to match provided word. This should be done
     // by using bit bliting - AND with mask and OR with given value.
-    for (let i = 0; i < 2; i += 1) {
-      const skipPage = this._getSkipPage(i, pageId);
+    {
+      const skipPage = this._getSkipPage(0, pageId);
       let blit = 0;
-      while (wordPos) {
-        if (wordPos & 0xf) blit |= 1;
+      let valueTmp = value;
+      while (valueTmp) {
+        if (valueTmp & LAYER1_SIEVE) blit |= 1;
         blit <<= 1;
-        wordPos >>>= 4;
+        valueTmp >>>= 4;
       }
-      const skipPos = wordPos >> ((i + 1) * 2);
-      const skipOffset = wordPos % ((1 << ((i + 1) * 2)) - 1);
-      skipPage[skipPos] |= 1 << skipOffset;
+      const skipPos = wordPos >> 2;
+      const skipOffset = (wordPos % 4) * 8;
+      let blitClear = ~(0xFF << skipOffset);
+      skipPage[skipPos] = skipPage[skipPos] & blitClear | (blit << skipOffset);
+    }
+    {
+      const skipPage = this._getSkipPage(1, pageId);
+      let blit = 0;
+      let valueTmp = value;
+      while (valueTmp) {
+        if (valueTmp & LAYER2_SIEVE) blit |= 1;
+        blit <<= 1;
+        valueTmp >>>= 16;
+      }
+      const skipPos = wordPos >> 4;
+      const skipOffset = (wordPos % 16) * 2;
+      let blitClear = ~(0x3 << skipOffset);
+      skipPage[skipPos] = skipPage[skipPos] & blitClear | (blit << skipOffset);
     }
     // Layer 3 should be set if only one bit it set; it is shared between
     // two words.
+    if (value) {
+      const skipPage = this._getSkipPage(2, pageId);
+      const skipPos = wordPos >> 6;
+      const skipOffset = (wordPos / 2 | 0) % 32;
+      skipPage[skipPos] |= (1 << skipOffset);
+    }
   }
   add(value: number): this {
     return this.set(value, true);
