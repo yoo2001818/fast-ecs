@@ -26,10 +26,25 @@ describe('BitSet', () => {
     
   });
   describe('#setWord', () => {
-
+    it('should correctly set entire word', () => {
+      let set = new BitSet();
+      set.setWord(0, 0xcafebabe | 0);
+      set.setWord(1, 0xdeadbeef | 0);
+      expect(set.get(0)).toBe(false);
+      expect(set.get(1)).toBe(true);
+      expect(set.get(32)).toBe(true);
+      expect(set.getWord(0)).toBe(0xcafebabe | 0);
+      expect(set.getWord(1)).toBe(0xdeadbeef | 0);
+    });
   });
   describe('#getWord', () => {
-
+    it('should correctly return word', () => {
+      let set = new BitSet();
+      set.set(1, true);
+      set.set(3, true);
+      set.set(4, true);
+      expect(set.getWord(0)).toBe(26);
+    });
   });
   describe('#clear', () => {
     it('should correctly reset the value', () => {
