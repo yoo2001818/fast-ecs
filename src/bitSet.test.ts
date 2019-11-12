@@ -80,11 +80,37 @@ describe('BitSet', () => {
   });
   describe('#and', () => {
     it('should run AND correctly', () => {
+      let a = new BitSet();
+      let b = new BitSet();
+      a.setWord(0, 0xdeadbeef);
+      a.setWord(3, 0xff00);
+      b.setWord(0, 0xbeef);
+      b.setWord(2, 0xbaba109);
+      b.setWord(3, 0x0f00);
+      let c = a.and(b);
+      expect(c.getWord(0)).toBe(0xbeef);
+      expect(c.getWord(1)).toBe(0);
+      expect(c.getWord(2)).toBe(0);
+      expect(c.getWord(3)).toBe(0xf00);
     });
   });
   describe('#andNot', () => {
   });
   describe('#or', () => {
+    it('should run OR correctly', () => {
+      let a = new BitSet();
+      let b = new BitSet();
+      a.setWord(0, 0xdeadbeef);
+      a.setWord(3, 0xff00);
+      b.setWord(0, 0xbeef);
+      b.setWord(2, 0xbaba109);
+      b.setWord(3, 0x0f0f);
+      let c = a.or(b);
+      expect(c.getWord(0)).toBe(0xdeadbeef | 0);
+      expect(c.getWord(1)).toBe(0);
+      expect(c.getWord(2)).toBe(0xbaba109);
+      expect(c.getWord(3)).toBe(0xff0f);
+    });
   });
   describe('#xor', () => {
   });
