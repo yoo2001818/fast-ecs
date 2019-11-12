@@ -113,6 +113,20 @@ describe('BitSet', () => {
     });
   });
   describe('#xor', () => {
+    it('should run XOR correctly', () => {
+      let a = new BitSet();
+      let b = new BitSet();
+      a.setWord(0, 0xdeadbeef);
+      a.setWord(3, 0xff00);
+      b.setWord(0, 0xbeef);
+      b.setWord(2, 0xbaba109);
+      b.setWord(3, 0x0f0f);
+      let c = a.xor(b);
+      expect(c.getWord(0)).toBe(0xdead0000 | 0);
+      expect(c.getWord(1)).toBe(0);
+      expect(c.getWord(2)).toBe(0xbaba109);
+      expect(c.getWord(3)).toBe(0xf00f);
+    });
   });
   describe('#forEach', () => {
   });
