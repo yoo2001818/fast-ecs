@@ -22,9 +22,6 @@ describe('BitSet', () => {
       expect(set.get(65535)).toBe(false);
     });
   });
-  describe('#get', () => {
-    
-  });
   describe('#setWord', () => {
     it('should correctly set entire word', () => {
       let set = new BitSet();
@@ -95,6 +92,20 @@ describe('BitSet', () => {
     });
   });
   describe('#andNot', () => {
+    it('should run AND NOT correctly', () => {
+      let a = new BitSet();
+      let b = new BitSet();
+      a.setWord(0, 0xdeadbeef);
+      a.setWord(3, 0xff00);
+      b.setWord(0, 0xbeef);
+      b.setWord(2, 0xbaba109);
+      b.setWord(3, 0x0f00);
+      let c = a.andNot(b);
+      expect(c.getWord(0)).toBe(0xdead0000 | 0);
+      expect(c.getWord(1)).toBe(0);
+      expect(c.getWord(2)).toBe(0);
+      expect(c.getWord(3)).toBe(0xf000);
+    });
   });
   describe('#or', () => {
     it('should run OR correctly', () => {
@@ -129,5 +140,21 @@ describe('BitSet', () => {
     });
   });
   describe('#forEach', () => {
+    it('should run callbacks right amount of time', () => {
+    });
+  });
+  describe('#entries', () => {
+    it('should return correct value', () => {
+      let set = new BitSet();
+      set.setWord(0, 0xcafebabe | 0);
+      expect([...set.entries()]).toEqual([
+        1, 2, 3, 4, 5, 7, 9, 11, 12, 13, 15, 17, 19, 20, 21, 22, 23,
+        25, 27, 30, 31,
+      ].map(v => [v, v]));
+    });
+  });
+  describe('#keys', () => {
+  });
+  describe('#values', () => {
   });
 });
