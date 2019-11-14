@@ -2,7 +2,7 @@ import BitSet from './bitSet';
 
 describe('BitSet', () => {
   describe('#set', () => {
-    it('should correct set value to 1', () => {
+    it('should correctly set value to 1', () => {
       let set = new BitSet();
       set.set(1, true);
       expect(set.get(1)).toBe(true);
@@ -11,7 +11,7 @@ describe('BitSet', () => {
       set.set(65535, true);
       expect(set.get(65535)).toBe(true);
     });
-    it('should correct set value to 0', () => {
+    it('should correctly set value to 0', () => {
       let set = new BitSet();
       set.set(1, true);
       set.set(1, false);
@@ -20,6 +20,37 @@ describe('BitSet', () => {
       expect(set.get(1023)).toBe(false);
       set.set(65535, false);
       expect(set.get(65535)).toBe(false);
+    });
+    it('should set skip bit for given position', () => {
+      let set = new BitSet();
+      set.set(1, true);
+      expect(set.skipPages[0][0][0]).toEqual(1);
+      expect(set.skipPages[1][0][0]).toEqual(1);
+      expect(set.skipPages[2][0][0]).toEqual(1);
+      set.set(5, true);
+      expect(set.skipPages[0][0][0]).toEqual(3);
+      expect(set.skipPages[1][0][0]).toEqual(1);
+      expect(set.skipPages[2][0][0]).toEqual(1);
+      set.set(17, true);
+      expect(set.skipPages[0][0][0]).toEqual(0x13);
+      expect(set.skipPages[1][0][0]).toEqual(3);
+      expect(set.skipPages[2][0][0]).toEqual(1);
+      set.set(65, true);
+      expect(set.skipPages[0][0][0]).toEqual(0x10013);
+      expect(set.skipPages[1][0][0]).toEqual(0x13);
+      expect(set.skipPages[2][0][0]).toEqual(3);
+      set.set(8192, true);
+      expect(set.skipPages[0][1][0]).toEqual(1);
+      expect(set.skipPages[1][1][0]).toEqual(1);
+      expect(set.skipPages[2][1][0]).toEqual(1);
+    });
+    it('should not unset skip bit for given position', () => {
+      let set = new BitSet();
+      set.set(1, true);
+      set.set(1, false);
+      expect(set.skipPages[0][0][0]).toEqual(1);
+      expect(set.skipPages[1][0][0]).toEqual(1);
+      expect(set.skipPages[2][0][0]).toEqual(1);
     });
   });
   describe('#setWord', () => {
@@ -32,6 +63,21 @@ describe('BitSet', () => {
       expect(set.get(32)).toBe(true);
       expect(set.getWord(0)).toBe(0xcafebabe | 0);
       expect(set.getWord(1)).toBe(0xdeadbeef | 0);
+    });
+    it('should correctly set skip bit', () => {
+      let set = new BitSet();
+      set.setWord(0, 0xcafebabe | 0);
+      expect(set.skipPages[0][0][0]).toEqual(0xff);
+      expect(set.skipPages[1][0][0]).toEqual(0x3);
+      expect(set.skipPages[2][0][0]).toEqual(1);
+      set.setWord(1, 0xdeadbeef | 0);
+      expect(set.skipPages[0][0][0]).toEqual(0xffff);
+      expect(set.skipPages[1][0][0]).toEqual(0xf);
+      expect(set.skipPages[2][0][0]).toEqual(1);
+      set.setWord(2, 1);
+      expect(set.skipPages[0][0][0]).toEqual(0x1ffff);
+      expect(set.skipPages[1][0][0]).toEqual(0x1f);
+      expect(set.skipPages[2][0][0]).toEqual(3);
     });
   });
   describe('#getWord', () => {
