@@ -194,7 +194,7 @@ describe('BitSet', () => {
       let set = new BitSet();
       set.setWord(0, 0xcafebabe | 0);
       expect([...set.entries()]).toEqual([
-        1, 2, 3, 4, 5, 7, 9, 11, 12, 13, 15, 17, 19, 20, 21, 22, 23,
+        1, 2, 3, 4, 5, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23,
         25, 27, 30, 31,
       ].map(v => [v, v]));
     });
