@@ -132,8 +132,8 @@ export default class BitSet implements Set<number> {
       let blit = 0;
       let valueTmp = value;
       while (valueTmp) {
-        if (valueTmp & LAYER1_SIEVE) blit |= 1;
         blit <<= 1;
+        if (valueTmp & LAYER1_SIEVE) blit |= 1;
         valueTmp >>>= 4;
       }
       const skipPos = wordPos >> 2;
@@ -146,8 +146,8 @@ export default class BitSet implements Set<number> {
       let blit = 0;
       let valueTmp = value;
       while (valueTmp) {
-        if (valueTmp & LAYER2_SIEVE) blit |= 1;
         blit <<= 1;
+        if (valueTmp & LAYER2_SIEVE) blit |= 1;
         valueTmp >>>= 16;
       }
       const skipPos = wordPos >> 4;
