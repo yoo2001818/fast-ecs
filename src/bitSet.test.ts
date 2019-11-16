@@ -136,6 +136,19 @@ describe('BitSet', () => {
       expect(c.getWord(2)).toBe(0);
       expect(c.getWord(3)).toBe(0xf00);
     });
+    it('should set skip bit correctly', () => {
+      let a = new BitSet();
+      let b = new BitSet();
+      a.setWord(0, 0xdeadbeef);
+      a.setWord(3, 0xff00);
+      b.setWord(0, 0xbeef);
+      b.setWord(2, 0xbaba109);
+      b.setWord(3, 0x0f00);
+      let c = a.and(b);
+      expect(c.skipPages[0][0][0]).toEqual(0x700000f);
+      expect(c.skipPages[1][0][0]).toEqual(1);
+      expect(c.skipPages[2][0][0]).toEqual(9);
+    });
   });
   describe('#andNot', () => {
     it('should run AND NOT correctly', () => {
@@ -200,7 +213,23 @@ describe('BitSet', () => {
     });
   });
   describe('#keys', () => {
+    it('should return correct value', () => {
+      let set = new BitSet();
+      set.setWord(0, 0xcafebabe | 0);
+      expect([...set.keys()]).toEqual([
+        1, 2, 3, 4, 5, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23,
+        25, 27, 30, 31,
+      ]);
+    });
   });
   describe('#values', () => {
+    it('should return correct value', () => {
+      let set = new BitSet();
+      set.setWord(0, 0xcafebabe | 0);
+      expect([...set.values()]).toEqual([
+        1, 2, 3, 4, 5, 7, 9, 11, 12, 13, 15, 17, 18, 19, 20, 21, 22, 23,
+        25, 27, 30, 31,
+      ]);
+    });
   });
 });
