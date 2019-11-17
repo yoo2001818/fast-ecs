@@ -1,5 +1,5 @@
 const LAYER1_SIEVE = 0xF;
-const LAYER2_SIEVE = 0xFF;
+const LAYER2_SIEVE = 0xFFFF;
 
 export default class BitSet implements Set<number> {
   size: number;
@@ -49,10 +49,8 @@ export default class BitSet implements Set<number> {
         // Run bytes through sieve.
         for (let j = 0; j < page.length; j += 1) {
           let byte = page[j];
-          if (offset >= 32) {
-            offset = 0;
-            pos += 1;
-          }
+          offset = (j * 8) % 32;
+          pos = j / 4 | 0;
           while (byte !== 0) {
             if (LAYER1_SIEVE & byte) skipPage[pos] |= 1 << offset;
             offset += 1;
@@ -68,10 +66,8 @@ export default class BitSet implements Set<number> {
         // Run bytes through sieve.
         for (let j = 0; j < page.length; j += 1) {
           let byte = page[j];
-          if (offset >= 32) {
-            offset = 0;
-            pos += 1;
-          }
+          offset = (j * 2) % 32;
+          pos = j / 16 | 0;
           while (byte !== 0) {
             if (LAYER2_SIEVE & byte) skipPage[pos] |= 1 << offset;
             offset += 1;

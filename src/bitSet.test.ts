@@ -145,8 +145,8 @@ describe('BitSet', () => {
       b.setWord(2, 0xbaba109);
       b.setWord(3, 0x0f00);
       let c = a.and(b);
-      expect(c.skipPages[0][0][0]).toEqual(0x700000f);
-      expect(c.skipPages[1][0][0]).toEqual(1);
+      expect(c.skipPages[0][0][0]).toEqual(0x400000f);
+      expect(c.skipPages[1][0][0]).toEqual(0x41);
       expect(c.skipPages[2][0][0]).toEqual(9);
     });
   });
