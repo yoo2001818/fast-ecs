@@ -18,7 +18,8 @@ export default class BitSet implements Set<number> {
   // Layer 1 is 256 bytes - 4 bits per 1 bit.
   // Layer 2 is 64 bytes - 16 bits per 1 bit.
   // Layer 3 is 16 bytes - 64 bits per 1 bit.
-  skipPages: Int32Array[][] = [[], [], []];
+  // Layer 1-3 is packed to 42 integers (336 bytes).
+  skipPages: Int32Array[] = [];
 
   _getPage(pageId: number): Int32Array {
     let page = this.pages[pageId];
@@ -30,12 +31,33 @@ export default class BitSet implements Set<number> {
     return page;
   }
 
-  _getSkipPage(layer: number, pageId: number): Int32Array {
-    let page = this.skipPages[layer][pageId];
+  _getSkipPage(pageId: number): Int32Array {
+    let page = this.skipPages[pageId];
     if (page == null) {
-      this.skipPages[layer][pageId] = page = new Int32Array(64 >> (layer * 2));
+      this.skipPages[pageId] = page = new Int32Array(42);
     }
     return page;
+  }
+  _generateSkipPageWord(pageId: number, wordPos: number, value: number): void {
+    // Regenerate skip page for the given word.
+    // Each 4 bits are compacted to 1 bit - therefore 32 bits are combined to
+    // 8 bits. This sets 1 byte of layer 1.
+    // We repeat this for 3 times to generate each layer.
+    //
+    // We can do this for each 4 bits, or run a 'sieve' to generate 8 bits at
+    // once.
+    // It'd be following: (using 16bits for brevity)
+    // o = (1000100010001000 & input) >>> 3 |
+    // (0100010001000100 & input) >>> 2 |
+    // (0010001000100010 & input) >>> 1 |
+    // (0001000100010001 & input)
+    // out = o & 0001000000000000 <<< 3 | ...
+    // But I guess this is slower. Let's just use 8 sieves to extract them.
+    // if (input & 1111000000000000) out |= 8;
+    // if (input & 111100000000) out |= 4;
+    // if (input & 11110000) out |= 2;
+    // if (input & 1111) out |= 1;
+    
   }
   _generateSkipPage(): void {
     for (let i = 0; i < this.pages.length; i += 1) {
