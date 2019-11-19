@@ -1,5 +1,28 @@
-const LAYER1_SIEVE = 0xF;
-const LAYER2_SIEVE = 0xFFFF;
+function calcSkipValue(
+  offset: number,
+  input: number,
+  prevSkipValue: number,
+): number {
+  const blitMask = 0xFF;
+  let blit = 0;
+  // 1. Run sieve first;
+  blit =
+    ((0x88888888 & input) >>> 3) |
+    ((0x44444444 & input) >>> 2) |
+    ((0x22222222 & input) >>> 1) |
+    (0x11111111 & input);
+  // 2. Shift them to the value
+  blit =
+    (blit & 0x10000000 >>> 21) |
+    (blit & 0x01000000 >>> 18) |
+    (blit & 0x00100000 >>> 15) |
+    (blit & 0x00010000 >>> 12) |
+    (blit & 0x00001000 >>> 9) |
+    (blit & 0x00000100 >>> 6) |
+    (blit & 0x00000010 >>> 3) |
+    (blit & 0x00000001);
+  return (prevSkipValue & ~(blitMask << offset)) | (blit << offset);
+}
 
 export default class BitSet implements Set<number> {
   size: number;
@@ -34,7 +57,7 @@ export default class BitSet implements Set<number> {
   _getSkipPage(pageId: number): Int32Array {
     let page = this.skipPages[pageId];
     if (page == null) {
-      this.skipPages[pageId] = page = new Int32Array(42);
+      this.skipPages[pageId] = page = new Int32Array(84);
     }
     return page;
   }
@@ -43,76 +66,31 @@ export default class BitSet implements Set<number> {
     // Each 4 bits are compacted to 1 bit - therefore 32 bits are combined to
     // 8 bits. This sets 1 byte of layer 1.
     // We repeat this for 3 times to generate each layer.
-    //
-    // We can do this for each 4 bits, or run a 'sieve' to generate 8 bits at
-    // once.
-    // It'd be following: (using 16bits for brevity)
-    // o = (1000100010001000 & input) >>> 3 |
-    // (0100010001000100 & input) >>> 2 |
-    // (0010001000100010 & input) >>> 1 |
-    // (0001000100010001 & input)
-    // out = o & 0001000000000000 <<< 3 | ...
-    // But I guess this is slower. Let's just use 8 sieves to extract them.
-    // if (input & 1111000000000000) out |= 8;
-    // if (input & 111100000000) out |= 4;
-    // if (input & 11110000) out |= 2;
-    // if (input & 1111) out |= 1;
-    
+    const skipPage = this._getSkipPage(pageId);
+    const skip1Pos = wordPos >>> 2;
+    const skip1Offset = (wordPos << 3) % 32;
+    const skip2Pos = (skip1Pos >>> 2);
+    const skip2Offset = (skip1Pos << 3) % 32;
+    const skip3Pos = (skip2Pos >>> 2);
+    const skip3Offset = (skip2Pos << 3) % 32;
+    const skip1 = calcSkipValue(skip1Offset, value, skipPage[skip1Pos]);
+    const skip2 = calcSkipValue(skip2Offset, skip1, skipPage[skip2Pos + 64]);
+    const skip3 = calcSkipValue(skip3Offset, skip2, skipPage[skip3Pos + 80]);
+    skipPage[skip1Pos] = skip1;
+    skipPage[skip2Pos + 64] = skip2;
+    skipPage[skip3Pos + 80] = skip3;
   }
-  _generateSkipPage(): void {
-    for (let i = 0; i < this.pages.length; i += 1) {
-      let page = this.pages[i];
-      if (page == null) continue;
-      {
-        let skipPage = new Int32Array(64);
-        this.skipPages[0][i] = skipPage;
-        let pos = 0;
-        let offset = 0;
-        // Run bytes through sieve.
-        for (let j = 0; j < page.length; j += 1) {
-          let byte = page[j];
-          offset = (j * 8) % 32;
-          pos = j / 4 | 0;
-          while (byte !== 0) {
-            if (LAYER1_SIEVE & byte) skipPage[pos] |= 1 << offset;
-            offset += 1;
-            byte >>>= 4;
-          }
-        }
+  _generateSkipPage(pageId: number): void {
+    // If we're regenerating entire page, we can just calculate each skip page.
+    const page = this._getPage(pageId);
+    const skipPage = this._getSkipPage(pageId);
+    // Mux 4 pages into one...
+    for (let i = 0; i < page.length; i += 4) {
+      let out = 0;
+      for (let j = 0; j < 4; j += 1) {
+        out |= calcSkipValue(j * 8, page[i + j], 0);
       }
-      {
-        let skipPage = new Int32Array(16);
-        this.skipPages[1][i] = skipPage;
-        let pos = 0;
-        let offset = 0;
-        // Run bytes through sieve.
-        for (let j = 0; j < page.length; j += 1) {
-          let byte = page[j];
-          offset = (j * 2) % 32;
-          pos = j / 16 | 0;
-          while (byte !== 0) {
-            if (LAYER2_SIEVE & byte) skipPage[pos] |= 1 << offset;
-            offset += 1;
-            byte >>>= 16;
-          }
-        }
-      }
-      {
-        let skipPage = new Int32Array(4);
-        this.skipPages[2][i] = skipPage;
-        let pos = 0;
-        let offset = 0;
-        // Run bytes through sieve.
-        for (let j = 0; j < page.length; j += 1) {
-          let byte = page[j];
-          if (offset >= 32) {
-            offset = 0;
-            pos += 1;
-          }
-          if (byte) skipPage[pos] |= 1 << offset;
-          offset += 1;
-        }
-      }
+      skipPage[i] = out;
     }
   }
 
