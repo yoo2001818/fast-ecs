@@ -1,9 +1,4 @@
-function calcSkipValue(
-  offset: number,
-  input: number,
-  prevSkipValue: number,
-): number {
-  const blitMask = 0xFF;
+function calcSkipValue(input: number): number {
   let blit = 0;
   // 1. Run sieve first;
   blit =
@@ -13,15 +8,19 @@ function calcSkipValue(
     (0x11111111 & input);
   // 2. Shift them to the value
   blit =
-    (blit & 0x10000000 >>> 21) |
-    (blit & 0x01000000 >>> 18) |
-    (blit & 0x00100000 >>> 15) |
-    (blit & 0x00010000 >>> 12) |
-    (blit & 0x00001000 >>> 9) |
-    (blit & 0x00000100 >>> 6) |
-    (blit & 0x00000010 >>> 3) |
+    ((blit & 0x10000000) >>> 21) |
+    ((blit & 0x01000000) >>> 18) |
+    ((blit & 0x00100000) >>> 15) |
+    ((blit & 0x00010000) >>> 12) |
+    ((blit & 0x00001000) >>> 9) |
+    ((blit & 0x00000100) >>> 6) |
+    ((blit & 0x00000010) >>> 3) |
     (blit & 0x00000001);
-  return (prevSkipValue & ~(blitMask << offset)) | (blit << offset);
+  return blit;
+}
+
+function blit(input: number, offset: number, value: number): number {
+  return (input & ~(0xFF << offset)) | (value << offset);
 }
 
 export default class BitSet implements Set<number> {
@@ -73,9 +72,11 @@ export default class BitSet implements Set<number> {
     const skip2Offset = (skip1Pos << 3) % 32;
     const skip3Pos = (skip2Pos >>> 2);
     const skip3Offset = (skip2Pos << 3) % 32;
-    const skip1 = calcSkipValue(skip1Offset, value, skipPage[skip1Pos]);
-    const skip2 = calcSkipValue(skip2Offset, skip1, skipPage[skip2Pos + 64]);
-    const skip3 = calcSkipValue(skip3Offset, skip2, skipPage[skip3Pos + 80]);
+    const skip1 = blit(skipPage[skip1Pos], skip1Offset, calcSkipValue(value));
+    const skip2 = blit(skipPage[skip2Pos + 64], skip2Offset,
+      calcSkipValue(skip1));
+    const skip3 = blit(skipPage[skip3Pos + 80], skip3Offset,
+      calcSkipValue(skip2));
     skipPage[skip1Pos] = skip1;
     skipPage[skip2Pos + 64] = skip2;
     skipPage[skip3Pos + 80] = skip3;
@@ -84,13 +85,28 @@ export default class BitSet implements Set<number> {
     // If we're regenerating entire page, we can just calculate each skip page.
     const page = this._getPage(pageId);
     const skipPage = this._getSkipPage(pageId);
-    // Mux 4 pages into one...
+    // Mux 4 integers into one...
     for (let i = 0; i < page.length; i += 4) {
       let out = 0;
       for (let j = 0; j < 4; j += 1) {
-        out |= calcSkipValue(j * 8, page[i + j], 0);
+        out |= calcSkipValue(page[i + j]) << (j * 8);
       }
-      skipPage[i] = out;
+      skipPage[i >> 2] = out;
+    }
+    // The same goes for level 1 and 2.
+    for (let i = 0; i < 64; i += 4) {
+      let out = 0;
+      for (let j = 0; j < 4; j += 1) {
+        out |= calcSkipValue(skipPage[i + j]) << (j * 8);
+      }
+      skipPage[(i >> 2) + 64] = out;
+    }
+    for (let i = 0; i < 16; i += 4) {
+      let out = 0;
+      for (let j = 0; j < 4; j += 1) {
+        out |= calcSkipValue(skipPage[i + j + 64]) << (j * 8);
+      }
+      skipPage[(i >> 2) + 80] = out;
     }
   }
 
@@ -100,65 +116,21 @@ export default class BitSet implements Set<number> {
   }
   set(key: number, value: boolean): this {
     const pageId = key >> 13;
-    const pageByte = key >> 5;
-    const pageOffset = pageByte & 255;
+    const pageWord = (key >> 5) & 0xFF;
     const page = this._getPage(pageId);
-    if (value) page[pageOffset] |= 1 << (key & 31);
-    else page[pageOffset] &= ~(1 << (key & 31));
-    if (value) {
-      for (let i = 0; i < 3; i += 1) {
-        const skipPage = this._getSkipPage(i, pageId);
-        const skipKey = (key & 8191) >> ((i + 1) * 2);
-        const skipOffset = skipKey >> 5;
-        const skipPos = skipKey & 31;
-        skipPage[skipOffset] |= 1 << skipPos;
-      }
-    }
+    let wordValue = page[pageWord];
+    if (value) wordValue |= 1 << (key & 31);
+    else wordValue &= ~(1 << (key & 31));
+    page[pageWord] = wordValue;
+    this._generateSkipPageWord(pageId, pageWord, wordValue);
     return this;
   }
   setWord(wordPos: number, value: number): void {
     const pageId = wordPos / 256 | 0;
     const page = this._getPage(pageId);
-    page[wordPos % 256] = value;
-    // Rebuild skip page
-    // Layer 1 and 2 should be set to match provided word. This should be done
-    // by using bit bliting - AND with mask and OR with given value.
-    {
-      const skipPage = this._getSkipPage(0, pageId);
-      let blit = 0;
-      let valueTmp = value;
-      while (valueTmp) {
-        blit <<= 1;
-        if (valueTmp & LAYER1_SIEVE) blit |= 1;
-        valueTmp >>>= 4;
-      }
-      const skipPos = wordPos >> 2;
-      const skipOffset = (wordPos % 4) * 8;
-      let blitClear = ~(0xFF << skipOffset);
-      skipPage[skipPos] = skipPage[skipPos] & blitClear | (blit << skipOffset);
-    }
-    {
-      const skipPage = this._getSkipPage(1, pageId);
-      let blit = 0;
-      let valueTmp = value;
-      while (valueTmp) {
-        blit <<= 1;
-        if (valueTmp & LAYER2_SIEVE) blit |= 1;
-        valueTmp >>>= 16;
-      }
-      const skipPos = wordPos >> 4;
-      const skipOffset = (wordPos % 16) * 2;
-      let blitClear = ~(0x3 << skipOffset);
-      skipPage[skipPos] = skipPage[skipPos] & blitClear | (blit << skipOffset);
-    }
-    // Layer 3 should be set if only one bit it set; it is shared between
-    // two words.
-    if (value) {
-      const skipPage = this._getSkipPage(2, pageId);
-      const skipPos = wordPos >> 6;
-      const skipOffset = (wordPos / 2 | 0) % 32;
-      skipPage[skipPos] |= (1 << skipOffset);
-    }
+    const pos = wordPos % 256;
+    page[pos] = value;
+    this._generateSkipPageWord(pageId, pos, value);
   }
   add(value: number): this {
     return this.set(value, true);
@@ -208,9 +180,7 @@ export default class BitSet implements Set<number> {
     for (let i = 0; i < this.pages.length; i += 1) {
       const page = this.pages[i];
       if (page == null) continue;
-      const skipPage1 = this.skipPages[0][i];
-      const skipPage2 = this.skipPages[1][i];
-      const skipPage3 = this.skipPages[2][i];
+      const skipPage = this.skipPages[i];
       let skipPage1Val;
       let skipPage2Val;
       let skipPage3Val;
@@ -219,9 +189,9 @@ export default class BitSet implements Set<number> {
       // skip page 3: 2 bytes per 1 bit, wraps every 64 byte
       for (let j = 0; j < page.length; j += 1) {
         if (!slow) {
-          if (j % 64 === 0) skipPage3Val = skipPage3[j / 64 | 0];
-          if (j % 16 === 0) skipPage2Val = skipPage2[j / 16 | 0];
-          if (j % 4 === 0) skipPage1Val = skipPage1[j / 4 | 0];
+          if (j % 64 === 0) skipPage3Val = skipPage[(j / 64 | 0) + 80];
+          if (j % 16 === 0) skipPage2Val = skipPage[(j / 16 | 0) + 64];
+          if (j % 4 === 0) skipPage1Val = skipPage[j / 4 | 0];
           if (j % 2 === 0) {
             if (!(skipPage3Val & 1)) {
               j += 1;
@@ -279,8 +249,8 @@ export default class BitSet implements Set<number> {
         outPage[j] = aPage[j] & bPage[j];
       }
       output.pages[i] = outPage;
+      output._generateSkipPage(i);
     }
-    output._generateSkipPage();
     return output;
   }
   // this AND ~set
@@ -299,8 +269,8 @@ export default class BitSet implements Set<number> {
         outPage[j] = aPage[j] & ~bPage[j];
       }
       output.pages[i] = outPage;
+      output._generateSkipPage(i);
     }
-    output._generateSkipPage();
     return output;
   }
   or(set: BitSet): BitSet {
@@ -322,8 +292,8 @@ export default class BitSet implements Set<number> {
         outPage[j] = aPage[j] | bPage[j];
       }
       output.pages[i] = outPage;
+      output._generateSkipPage(i);
     }
-    output._generateSkipPage();
     return output;
   }
   xor(set: BitSet): BitSet {
@@ -345,8 +315,8 @@ export default class BitSet implements Set<number> {
         outPage[j] = aPage[j] ^ bPage[j];
       }
       output.pages[i] = outPage;
+      output._generateSkipPage(i);
     }
-    output._generateSkipPage();
     return output;
   }
 }
