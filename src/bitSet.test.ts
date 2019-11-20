@@ -231,5 +231,11 @@ describe('BitSet', () => {
         25, 27, 30, 31,
       ]);
     });
+    it('should correctly run skip value', () => {
+      let set = new BitSet();
+      set.setWord(0, 0x10000010);
+      set.setWord(4, 1);
+      expect([...set.values()]).toEqual([4, 28, 128]);
+    });
   });
 });
