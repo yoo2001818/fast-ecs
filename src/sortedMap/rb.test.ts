@@ -101,6 +101,23 @@ describe('RedBlackWoStackSortedMap', () => {
       expect(map.delete(2)).toBe(false);
     });
     it('should handle mid-node deletion', () => {
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      //       4                 5 
+      //   2      7          2       7
+      // 1   3  5   8 ---> 1   3   6   8
+      //         6
+      map.set(4, 4);
+      map.set(2, 2);
+      map.set(7, 7);
+      map.set(1, 1);
+      map.set(3, 3);
+      map.set(5, 5);
+      map.set(8, 8);
+      map.set(6, 6);
+      expect(map.delete(4)).toBe(true);
+      assertRedBlackInvariant(map.root);
+      expect(map.size).toBe(7);
+      expect([...map.values()]).toEqual([1, 2, 3, 5, 6, 7, 8]);
     });
     it('should handle trivial red case', () => {
     });
