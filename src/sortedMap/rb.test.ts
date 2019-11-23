@@ -119,10 +119,10 @@ describe('RedBlackWoStackSortedMap', () => {
       expect(map.size).toBe(7);
       expect([...map.values()]).toEqual([1, 2, 3, 5, 6, 7, 8]);
     });
-    it('should handle trivial red case', () => {
-    });
     it('should handle left / left case', () => {
-
+      //       4.
+      //   2       6
+      // 1.  3.  5.  7. --->
     });
     it('should handle left / right case', () => {
 
