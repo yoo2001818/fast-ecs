@@ -331,7 +331,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
             grandparent != null && grandparent.right === parent;
           if (currentDir) {
             // Left case
-            if (siblingRightIsRed) {
+            if (!siblingLeftIsRed) {
               // Left right case
               if (sibling.left != null) sibling.left.isRed = parent.isRed;
               sibling = leftRotate(sibling);
@@ -344,7 +344,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
             parent = rightRotate(parent);
           } else {
             // Right case
-            if (siblingLeftIsRed) {
+            if (!siblingRightIsRed) {
               // Right left case
               if (sibling.right != null) sibling.right.isRed = parent.isRed;
               sibling = rightRotate(sibling);
