@@ -120,18 +120,58 @@ describe('RedBlackWoStackSortedMap', () => {
       expect([...map.values()]).toEqual([1, 2, 3, 5, 6, 7, 8]);
     });
     it('should handle left / left case', () => {
-      //       4.
-      //   2       6
-      // 1.  3.  5.  7. --->
+      //    4.          2.
+      //  2.  5.      1.  4.
+      // 1 3    --->   3
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      map.set(4, 4);
+      map.set(2, 2);
+      map.set(5, 5);
+      map.set(1, 1);
+      map.set(3, 3);
+      expect(map.delete(5)).toBe(true);
+      assertRedBlackInvariant(map.root);
+      expect(map.size).toBe(4);
     });
     it('should handle left / right case', () => {
-
+      //    4.          3.
+      //  2.  5.      2.  4.
+      //   3    --->
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      map.set(4, 4);
+      map.set(2, 2);
+      map.set(5, 5);
+      map.set(3, 3);
+      expect(map.delete(5)).toBe(true);
+      assertRedBlackInvariant(map.root);
+      expect(map.size).toBe(3);
     });
     it('should handle right / right case', () => {
-
+      //    3.           4.
+      //  1.  4.       3.  5.
+      //    2   5 --->    2
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      map.set(3, 3);
+      map.set(1, 1);
+      map.set(4, 4);
+      map.set(2, 2);
+      map.set(5, 5);
+      expect(map.delete(1)).toBe(true);
+      assertRedBlackInvariant(map.root);
+      expect(map.size).toBe(4);
     });
     it('should handle right / left case', () => {
-
+      //   2.         3.
+      // 1. 4. -->  2. 4.
+      //   3
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      map.set(2, 2);
+      map.set(1, 1);
+      map.set(4, 4);
+      map.set(3, 3);
+      expect(map.delete(1)).toBe(true);
+      assertRedBlackInvariant(map.root);
+      expect(map.size).toBe(3);
     });
     it('should handle parent recursion', () => {
 
