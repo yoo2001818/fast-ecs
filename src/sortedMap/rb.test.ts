@@ -173,13 +173,35 @@ describe('RedBlackWoStackSortedMap', () => {
       assertRedBlackInvariant(map.root);
       expect(map.size).toBe(3);
     });
-    it('should handle parent recursion', () => {
-
-    });
     it('should handle left case', () => {
-
+      //     5.
+      //   3   7.
+      //  2.4.6 8 ---> delete 7 (6 and 8 must be deleted first)
+      // 1
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      [5, 3, 7, 2, 4, 6, 8, 1].forEach(v => map.set(v, v));
+      map.delete(6);
+      map.delete(8);
+      assertRedBlackInvariant(map.root);
+      expect(map.delete(7)).toBe(true);
+      assertRedBlackInvariant(map.root);
+      expect(map.size).toBe(5);
     });
     it('should handle right case', () => {
+      //    3.
+      //  1. 5 ----> delete 1
+      // 0 24.6. 
+      //       7
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      [3, 1, 5, 0, 2, 4, 6, 7].forEach(v => map.set(v, v));
+      map.delete(0);
+      map.delete(2);
+      assertRedBlackInvariant(map.root);
+      expect(map.delete(1)).toBe(true);
+      assertRedBlackInvariant(map.root);
+      expect(map.size).toBe(5);
+    });
+    it('should handle parent recursion', () => {
 
     });
     it('should correctly remove nodes from complex tree', () => {
