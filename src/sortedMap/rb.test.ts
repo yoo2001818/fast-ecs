@@ -215,6 +215,7 @@ describe('RedBlackWoStackSortedMap', () => {
         input[i] = input[j];
         input[j] = prev;
       }
+      input = [5, 0, 4, 8, 6, 2, 7, 1, 3, 9];
       input.forEach((v, i) => {
         map.delete(v);
         expect([...map.values()]).toEqual(sortedInput
