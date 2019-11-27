@@ -147,14 +147,14 @@ describe('RedBlackWoStackSortedMap', () => {
       expect(map.size).toBe(3);
     });
     it('should handle right / right case', () => {
-      //    3.           4.
-      //  1.  4.       3.  5.
-      //    2   5 --->    2
+      //    2.           4.
+      //  1.  4.       2.  5.
+      //    3   5 --->    3
       let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
-      map.set(3, 3);
+      map.set(2, 2);
       map.set(1, 1);
       map.set(4, 4);
-      map.set(2, 2);
+      map.set(3, 3);
       map.set(5, 5);
       expect(map.delete(1)).toBe(true);
       assertRedBlackInvariant(map.root);
@@ -215,13 +215,11 @@ describe('RedBlackWoStackSortedMap', () => {
         input[i] = input[j];
         input[j] = prev;
       }
-      input = [5, 0, 4, 8, 6, 2, 7, 1, 3, 9];
       input.forEach((v, i) => {
         map.delete(v);
         expect([...map.values()]).toEqual(sortedInput
           .filter(v => !input.slice(0, i + 1).includes(v)));
         assertRedBlackInvariant(map.root);
-        if (v === 0) console.log(JSON.stringify(map.root, null, 2));
       });
       expect(map.size).toBe(0);
       expect([...map.values()]).toEqual([]);

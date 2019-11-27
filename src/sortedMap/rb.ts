@@ -329,32 +329,36 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
           const grandparent = parent.parent;
           const grandparentDir =
             grandparent != null && grandparent.right === parent;
-          if (siblingLeftIsRed) {
-            // Left case
-            if (currentDir) {
-              // Left right case
-              if (sibling.left != null) sibling.left.isRed = parent.isRed;
-              sibling = leftRotate(sibling);
-              parent.left = sibling;
-            } else {
+          if (currentDir) {
+            if (!siblingRightIsRed) {
+              // left left
               if (sibling.left != null) sibling.left.isRed = sibling.isRed;
               sibling.isRed = parent.isRed;
-            }
-            parent.isRed = false;
-            parent = rightRotate(parent);
-          } else {
-            // Right case
-            if (!currentDir) {
-              // Right left case
-              if (sibling.right != null) sibling.right.isRed = parent.isRed;
-              sibling = rightRotate(sibling);
-              parent.right = sibling;
+              parent.isRed = false;
+              parent = rightRotate(parent);
             } else {
+              // left right
+              if (sibling.right != null) sibling.right.isRed = parent.isRed;
+              sibling = leftRotate(sibling);
+              parent.left = sibling;
+              parent.isRed = false;
+              parent = rightRotate(parent);
+            }
+          } else {
+            if (!siblingLeftIsRed) {
+              // right right 
               if (sibling.right != null) sibling.right.isRed = sibling.isRed;
               sibling.isRed = parent.isRed;
+              parent.isRed = false;
+              parent = leftRotate(parent);
+            } else {
+              // right left
+              if (sibling.left != null) sibling.left.isRed = parent.isRed;
+              sibling = rightRotate(sibling);
+              parent.right = sibling;
+              parent.isRed = false;
+              parent = leftRotate(parent);
             }
-            parent.isRed = false;
-            parent = leftRotate(parent);
           }
           if (grandparent == null) {
             this.root = parent;
