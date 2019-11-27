@@ -221,6 +221,7 @@ describe('RedBlackWoStackSortedMap', () => {
         expect([...map.values()]).toEqual(sortedInput
           .filter(v => !input.slice(0, i + 1).includes(v)));
         assertRedBlackInvariant(map.root);
+        if (v === 0) console.log(JSON.stringify(map.root, null, 2));
       });
       expect(map.size).toBe(0);
       expect([...map.values()]).toEqual([]);
