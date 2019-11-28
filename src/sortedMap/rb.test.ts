@@ -225,14 +225,46 @@ describe('RedBlackWoStackSortedMap', () => {
       expect([...map.values()]).toEqual([]);
     });
   });
-  it('should correctly traverse the tree', () => {
-    let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
-    for (let i = 0; i < 10; i += 1) {
-      map.set(i, i);
-    }
-    expect([...map.keys(5)]).toEqual([5, 6, 7, 8, 9]);
-    expect([...map.keys(5, true)]).toEqual([6, 7, 8, 9]);
-    expect([...map.keys(5, false, true)]).toEqual([5, 4, 3, 2, 1, 0]);
-    expect([...map.keys(5, true, true)]).toEqual([4, 3, 2, 1, 0]);
+  describe('#get', () => {
+    it('should work correctly', () => {
+
+    });
+  });
+  describe('#has', () => {
+    it('should work correctly', () => {
+
+    });
+  });
+  describe('#clear', () => {
+    it('should work correctly', () => {
+
+    });
+  });
+  describe('#entries', () => {
+    it('should work correctly', () => {
+
+    });
+  });
+  describe('#keys', () => {
+    it('should correctly traverse the tree', () => {
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      for (let i = 0; i < 10; i += 1) {
+        map.set(i, i);
+      }
+      expect([...map.keys(5)]).toEqual([5, 6, 7, 8, 9]);
+      expect([...map.keys(5, true)]).toEqual([6, 7, 8, 9]);
+      expect([...map.keys(5, false, true)]).toEqual([5, 4, 3, 2, 1, 0]);
+      expect([...map.keys(5, true, true)]).toEqual([4, 3, 2, 1, 0]);
+    });
+  });
+  describe('#values', () => {
+    it('should work correctly', () => {
+
+    });
+  });
+  describe('#forEach', () => {
+    it('should work correctly', () => {
+
+    });
   });
 });
