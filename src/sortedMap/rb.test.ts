@@ -226,8 +226,17 @@ describe('RedBlackWoStackSortedMap', () => {
     });
   });
   describe('#get', () => {
-    it('should work correctly', () => {
-
+    it('should return value for given key', () => {
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      map.set(1, 130);
+      map.set(2, 1);
+      expect(map.get(1)).toBe(130);
+      expect(map.get(2)).toBe(1);
+    });
+    it('should return undefined if not exists', () => {
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      map.set(1, 130);
+      expect(map.get(100)).toBe(undefined);
     });
   });
   describe('#has', () => {
