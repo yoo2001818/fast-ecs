@@ -240,8 +240,17 @@ describe('RedBlackWoStackSortedMap', () => {
     });
   });
   describe('#has', () => {
-    it('should work correctly', () => {
-
+    it('should return true if exists', () => {
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      map.set(1, 130);
+      map.set(2, 1);
+      expect(map.has(1)).toBe(true);
+      expect(map.has(2)).toBe(true);
+    });
+    it('should return false if not exists', () => {
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      map.set(1, 130);
+      expect(map.has(100)).toBe(false);
     });
   });
   describe('#clear', () => {
