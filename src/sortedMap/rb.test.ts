@@ -254,8 +254,15 @@ describe('RedBlackWoStackSortedMap', () => {
     });
   });
   describe('#clear', () => {
-    it('should work correctly', () => {
-
+    it('should clear the entire tree', () => {
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      map.set(1, 1);
+      map.set(2, 2);
+      map.set(3, 3);
+      map.set(4, 4);
+      map.clear();
+      expect(map.size)).toBe(0);
+      expect(map.get(1)).toBe(undefined);
     });
   });
   describe('#entries', () => {
