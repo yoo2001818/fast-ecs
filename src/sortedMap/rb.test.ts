@@ -303,8 +303,20 @@ describe('RedBlackWoStackSortedMap', () => {
     });
   });
   describe('#forEach', () => {
-    it('should work correctly', () => {
-
+    it('should correctly traverse the tree', () => {
+      const callback = jest.fn(x => x);
+      let map = new RedBlackSortedMap<number, number>((a, b) => a - b);
+      for (let i = 0; i < 5; i += 1) {
+        map.set(i, i);
+      }
+      map.forEach(callback);
+      expect(callback.mock.calls).toEqual([
+        [0, 0, map],
+        [1, 1, map],
+        [2, 2, map],
+        [3, 3, map],
+        [4, 4, map],
+      ]);
     });
   });
 });
