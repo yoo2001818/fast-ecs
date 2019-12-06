@@ -1,4 +1,6 @@
-export default class IdStore extends Set<number> {
+import BitSet from './bitSet';
+
+export default class IdStore extends BitSet {
   maxId: number = 0;
   constructor() {
     super();
