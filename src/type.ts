@@ -1,5 +1,4 @@
-export interface Engine {
-}
+import Engine from './engine';
 
 export interface EngineIndex {
   register(engine: Engine): void,

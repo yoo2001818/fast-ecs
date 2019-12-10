@@ -1,5 +1,6 @@
 import BitSet from './bitSet';
-import { Engine, EngineIndex } from './type';
+import { EngineIndex } from './type';
+import Engine from './engine';
 
 export default class ComponentIndex extends BitSet implements EngineIndex {
   name: string;
@@ -9,7 +10,9 @@ export default class ComponentIndex extends BitSet implements EngineIndex {
   }
 
   register(engine: Engine): void {
+    engine.getSignal('componentAdded').addListener(null, () => {
 
+    });
   }
 
   unregister(): void {

@@ -1,5 +1,6 @@
 import RedBlackSortedMap from './sortedMap/rb';
-import { Engine, EngineStore } from './type';
+import { EngineStore } from './type';
+import Engine from './engine';
 
 export default class ComponentStore<T> implements EngineStore {
   name: string;
