@@ -3,8 +3,8 @@ import Signal from './signal';
 
 export default class Engine {
   signals: Map<string, Signal<unknown>>;
-  indexes: { [key: string]: EngineIndex };
-  store: { [key: string]: EngineStore };
+  indexes: { [key: string]: unknown };
+  store: { [key: string]: unknown };
 
   constructor() {
     this.signals = new Map();
@@ -29,5 +29,13 @@ export default class Engine {
   addStore(name: string, value: EngineStore): void {
     this.store[name] = value;
     value.register(this);
+  }
+
+  getIndex<T>(name: string): T {
+    return this.indexes[name] as T;
+  }
+
+  getStore<T>(name: string): T {
+    return this.store[name] as T;
   }
 }
