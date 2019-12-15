@@ -1,15 +1,17 @@
-import { EngineIndex, EngineStore } from './type';
+import { EngineIndex, EngineStore, EngineSystem } from './type';
 import Signal from './signal';
 
 export default class Engine {
   signals: Map<string, Signal<unknown>>;
   indexes: { [key: string]: unknown };
   store: { [key: string]: unknown };
+  systems: EngineSystem[];
 
   constructor() {
     this.signals = new Map();
     this.indexes = {};
     this.store = {};
+    this.systems = [];
   }
 
   getSignal<T>(name: string): Signal<T> {
@@ -31,11 +33,19 @@ export default class Engine {
     value.register(this);
   }
 
+  addSystem(name: string, init: (engine: Engine) => EngineSystem): void {
+    this.systems.push(init(this));
+  }
+
   getIndex<T>(name: string): T {
     return this.indexes[name] as T;
   }
 
   getStore<T>(name: string): T {
     return this.store[name] as T;
+  }
+
+  update(): void {
+    this.systems.forEach((v) => v());
   }
 }
