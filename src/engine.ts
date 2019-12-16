@@ -5,13 +5,15 @@ export default class Engine {
   signals: Map<string, Signal<unknown>>;
   indexes: { [key: string]: unknown };
   store: { [key: string]: unknown };
-  systems: EngineSystem[];
+  systems: { [key: string]: unknown };
+  systemList: unknown[];
 
   constructor() {
     this.signals = new Map();
     this.indexes = {};
     this.store = {};
-    this.systems = [];
+    this.systems = {};
+    this.systemList = [];
   }
 
   getSignal<T>(name: string): Signal<T> {
@@ -34,7 +36,9 @@ export default class Engine {
   }
 
   addSystem(name: string, init: (engine: Engine) => EngineSystem): void {
-    this.systems.push(init(this));
+    const system = init(this);
+    this.systems[name] = system;
+    this.systemList.push(system);
   }
 
   getIndex<T>(name: string): T {
@@ -45,7 +49,11 @@ export default class Engine {
     return this.store[name] as T;
   }
 
+  getSystem<T>(name: string): T {
+    return this.systems[name] as T;
+  }
+
   update(): void {
-    this.systems.forEach((v) => v());
+    this.systemList.forEach((v) => (v as EngineSystem)());
   }
 }
