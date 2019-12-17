@@ -24,18 +24,18 @@
   ],
   "homepage": "https://github.com/yoo2001818/fast-ecs#readme",
   "devDependencies": {
-    "@types/jest": "^24.0.18",
-    "@types/node": "^12.7.5",
-    "@typescript-eslint/eslint-plugin": "^2.3.0",
-    "@typescript-eslint/parser": "^2.3.0",
-    "eslint": "^6.4.0",
-    "eslint-config-airbnb-typescript": "^5.0.0",
-    "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-jest": "^22.17.0",
+    "@types/jest": "^24.0.23",
+    "@types/node": "^12.12.19",
+    "@typescript-eslint/eslint-plugin": "^2.12.0",
+    "@typescript-eslint/parser": "^2.12.0",
+    "eslint": "^6.7.2",
+    "eslint-config-airbnb-typescript": "^6.3.1",
+    "eslint-plugin-import": "^2.19.1",
+    "eslint-plugin-jest": "^23.1.1",
     "jest": "^24.9.0",
-    "ts-jest": "^24.1.0",
-    "ts-node": "^8.4.1",
-    "typescript": "^3.6.3"
+    "ts-jest": "^24.2.0",
+    "ts-node": "^8.5.4",
+    "typescript": "^3.7.3"
   },
   "dependencies": {}
 }
