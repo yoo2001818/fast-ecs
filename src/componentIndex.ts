@@ -24,16 +24,20 @@ export default class ComponentIndex extends BitSet implements EngineIndex {
   register(engine: Engine): void {
     this.engine = engine;
     this.engine.getSignal('componentAdded').addListener(
-      this.name, this.handleAdded);
+      this.name, this.handleAdded,
+    );
     this.engine.getSignal('componentRemoved').addListener(
-      this.name, this.handleRemoved);
+      this.name, this.handleRemoved,
+    );
   }
 
   unregister(): void {
     this.engine.getSignal('componentAdded').removeListener(
-      this.name, this.handleAdded);
+      this.name, this.handleAdded,
+    );
     this.engine.getSignal('componentRemoved').removeListener(
-      this.name, this.handleRemoved);
+      this.name, this.handleRemoved,
+    );
     this.engine = null;
   }
 }

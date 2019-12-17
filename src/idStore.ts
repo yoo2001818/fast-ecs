@@ -16,7 +16,7 @@ export default class IdStore implements EngineStore {
   }
 
   create(): number {
-    let newId = this.maxId;
+    const newId = this.maxId;
     this.maxId += 1;
     this.set(newId, true);
     return newId;
@@ -48,4 +48,3 @@ export default class IdStore implements EngineStore {
     this.removedSignal = null;
   }
 }
-

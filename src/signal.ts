@@ -26,10 +26,10 @@ export default class Signal<T> {
   }
 
   emit(key: string, value: T): void {
-    this.listeners.forEach(v => v(key, value));
-    let keyListeners = this.keyListeners[key];
+    this.listeners.forEach((v) => v(key, value));
+    const keyListeners = this.keyListeners[key];
     if (keyListeners != null) {
-      keyListeners.forEach(v => v(key, value));
+      keyListeners.forEach((v) => v(key, value));
     }
   }
 }

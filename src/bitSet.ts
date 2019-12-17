@@ -45,18 +45,22 @@ export default class BitSet implements Set<number> {
 
   _getPage(pageId: number): Int32Array {
     let page = this.pages[pageId];
-    if (page == null) this.pages[pageId] = page = new Int32Array(256);
+    if (page == null) {
+      page = new Int32Array(256);
+      this.pages[pageId] = page;
+    }
     return page;
   }
   _getPageIfExists(pageId: number): Int32Array | null {
-    let page = this.pages[pageId];
+    const page = this.pages[pageId];
     return page;
   }
 
   _getSkipPage(pageId: number): Int32Array {
     let page = this.skipPages[pageId];
     if (page == null) {
-      this.skipPages[pageId] = page = new Int32Array(84);
+      page = new Int32Array(84);
+      this.skipPages[pageId] = page;
     }
     return page;
   }
@@ -164,19 +168,19 @@ export default class BitSet implements Set<number> {
     callbackfn: (value: number, value2: number, set: Set<number>) => void,
     thisArg?: any,
   ): void {
-    for (let value of this.values()) {
+    for (const value of this.values()) {
       callbackfn.call(thisArg, value, value, this);
     }
   }
-  *entries(): IterableIterator<[number, number]> {
-    for (let value of this.values()) {
+  * entries(): IterableIterator<[number, number]> {
+    for (const value of this.values()) {
       yield [value, value];
     }
   }
   keys(): IterableIterator<number> {
     return this.values();
   }
-  *values(): IterableIterator<number> {
+  * values(): IterableIterator<number> {
     for (let i = 0; i < this.pages.length; i += 1) {
       const page = this.pages[i];
       if (page == null) continue;
@@ -223,15 +227,15 @@ export default class BitSet implements Set<number> {
   }
   [Symbol.toStringTag]: string = 'BitSet';
   and(set: BitSet): BitSet {
-    let output = new BitSet();
+    const output = new BitSet();
     const minPages = Math.min(set.pages.length, this.pages.length);
     for (let i = 0; i < minPages; i += 1) {
-      let aPage = this.pages[i];
-      let bPage = set.pages[i];
+      const aPage = this.pages[i];
+      const bPage = set.pages[i];
       if (aPage == null || bPage == null) {
         continue;
       }
-      let outPage = new Int32Array(256);
+      const outPage = new Int32Array(256);
       for (let j = 0; j < outPage.length; j += 1) {
         outPage[j] = aPage[j] & bPage[j];
       }
@@ -242,16 +246,16 @@ export default class BitSet implements Set<number> {
   }
   // this AND ~set
   andNot(set: BitSet): BitSet {
-    let output = new BitSet();
+    const output = new BitSet();
     for (let i = 0; i < this.pages.length; i += 1) {
-      let aPage = this.pages[i];
-      let bPage = set.pages[i];
+      const aPage = this.pages[i];
+      const bPage = set.pages[i];
       if (aPage == null) continue;
       if (bPage == null) {
         output.pages[i] = aPage;
         continue;
       }
-      let outPage = new Int32Array(256);
+      const outPage = new Int32Array(256);
       for (let j = 0; j < outPage.length; j += 1) {
         outPage[j] = aPage[j] & ~bPage[j];
       }
@@ -261,11 +265,11 @@ export default class BitSet implements Set<number> {
     return output;
   }
   or(set: BitSet): BitSet {
-    let output = new BitSet();
+    const output = new BitSet();
     const maxPages = Math.max(set.pages.length, this.pages.length);
     for (let i = 0; i < maxPages; i += 1) {
-      let aPage = this.pages[i];
-      let bPage = set.pages[i];
+      const aPage = this.pages[i];
+      const bPage = set.pages[i];
       if (aPage == null) {
         output.pages[i] = bPage;
         continue;
@@ -274,7 +278,7 @@ export default class BitSet implements Set<number> {
         output.pages[i] = aPage;
         continue;
       }
-      let outPage = new Int32Array(256);
+      const outPage = new Int32Array(256);
       for (let j = 0; j < outPage.length; j += 1) {
         outPage[j] = aPage[j] | bPage[j];
       }
@@ -284,11 +288,11 @@ export default class BitSet implements Set<number> {
     return output;
   }
   xor(set: BitSet): BitSet {
-    let output = new BitSet();
+    const output = new BitSet();
     const maxPages = Math.max(set.pages.length, this.pages.length);
     for (let i = 0; i < maxPages; i += 1) {
-      let aPage = this.pages[i];
-      let bPage = set.pages[i];
+      const aPage = this.pages[i];
+      const bPage = set.pages[i];
       if (aPage == null) {
         output.pages[i] = bPage;
         continue;
@@ -297,7 +301,7 @@ export default class BitSet implements Set<number> {
         output.pages[i] = aPage;
         continue;
       }
-      let outPage = new Int32Array(256);
+      const outPage = new Int32Array(256);
       for (let j = 0; j < outPage.length; j += 1) {
         outPage[j] = aPage[j] ^ bPage[j];
       }
