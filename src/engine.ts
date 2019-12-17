@@ -1,10 +1,16 @@
-import { EngineIndex, EngineStore, EngineSystem } from './type';
+import {
+  EngineIndex,
+  EngineStore,
+  EngineSystem,
+  EngineHelper,
+} from './type';
 import Signal from './signal';
 
 export default class Engine {
   signals: Map<string, Signal<unknown>>;
   indexes: { [key: string]: unknown };
   store: { [key: string]: unknown };
+  helpers: { [key: string]: unknown };
   systems: { [key: string]: unknown };
   systemList: unknown[];
 
@@ -12,6 +18,7 @@ export default class Engine {
     this.signals = new Map();
     this.indexes = {};
     this.store = {};
+    this.helpers = {};
     this.systems = {};
     this.systemList = [];
   }
@@ -35,6 +42,11 @@ export default class Engine {
     value.register(this);
   }
 
+  addHelper(name: string, value: EngineHelper): void {
+    this.store[name] = value;
+    value.register(this);
+  }
+
   addSystem(name: string, init: (engine: Engine) => EngineSystem): void {
     const system = init(this);
     this.systems[name] = system;
@@ -47,6 +59,10 @@ export default class Engine {
 
   getStore<T>(name: string): T {
     return this.store[name] as T;
+  }
+
+  getHelper<T>(name: string): T {
+    return this.helpers[name] as T;
   }
 
   getSystem<T>(name: string): T {

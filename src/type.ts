@@ -10,6 +10,11 @@ export interface EngineStore {
   unregister(engine: Engine): void,
 }
 
+export interface EngineHelper {
+  register(engine: Engine): void,
+  unregister(engine: Engine): void,
+}
+
 export interface EngineSystem {
   (): void,
 }
