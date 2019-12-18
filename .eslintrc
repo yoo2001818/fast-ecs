@@ -12,6 +12,8 @@
     "operator-linebreak": "off",
     "no-restricted-syntax": "off",
     "no-continue": "off",
+    "no-param-reassign": "off",
+    "max-classes-per-file": "off",
     "import/no-cycle": "off"
   },
   "overrides": [

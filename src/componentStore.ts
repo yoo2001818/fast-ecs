@@ -35,8 +35,5 @@ export default class ComponentStore<T> implements EngineStore {
   }
 
   unregister(): void {
-    this.engine = null;
-    this.addedSignal = null;
-    this.removedSignal = null;
   }
 }

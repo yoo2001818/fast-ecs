@@ -22,7 +22,7 @@ export class Node<K, V> {
       isRed: this.isRed,
       left: this.left,
       right: this.right,
-    }
+    };
   }
 }
 
@@ -32,8 +32,9 @@ function leftRotate<K, V>(node: Node<K, V>): Node<K, V> {
   //   t1   right      -->          node    t4
   //       /     \                 /    \
   //      t23    t4               t1    t23
-  let right = node.right;
-  let t23 = right.left;
+  const { right } = node;
+  if (right == null) return node;
+  const t23 = right.left;
   right.left = node;
   node.right = t23;
   if (t23 != null) t23.parent = node;
@@ -48,8 +49,9 @@ function rightRotate<K, V>(node: Node<K, V>): Node<K, V> {
   //      left   t4    -->        t1   node
   //     /    \                       /    \
   //    t1    t23                   t23    t4
-  let left = node.left;
-  let t23 = left.right;
+  const { left } = node;
+  if (left == null) return node;
+  const t23 = left.right;
   left.right = node;
   node.left = t23;
   if (t23 != null) t23.parent = node;
@@ -65,14 +67,14 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
 
   constructor(comparator: (a: K, b: K) => number) {
     this.comparator = comparator;
- }
+  }
 
   get(key: K): V | undefined {
     if (this.root == null) {
       return undefined;
     }
     // Traverse down to the node until the end is met
-    let current = this.root;
+    let current: Node<K, V> | null = this.root;
     while (current != null) {
       const result = this.comparator(key, current.key);
       if (result === 0) return current.value;
@@ -92,7 +94,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       return false;
     }
     // Traverse down to the node until the end is met
-    let current = this.root;
+    let current: Node<K, V> | null = this.root;
     while (current != null) {
       const result = this.comparator(key, current.key);
       if (result === 0) return true;
@@ -119,7 +121,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
       if (result === 0) {
         current.value = value;
         return this;
-      } else if (result > 0) {
+      } if (result > 0) {
         // key > current.key
         if (current.right != null) {
           current = current.right;
@@ -150,18 +152,19 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     // Then perform a retracing loop.
     while (true) {
       // If the node is the root node, set itself to black and it's done.
-      let parent = current.parent;
+      let { parent } = current;
       if (parent == null) {
         current.isRed = false;
         this.root = current;
-        return;
+        return this;
       }
       // If parent's color is black, do nothing as it's a valid tree.
-      if (!parent.isRed) return;
+      if (!parent.isRed) return this;
       // If parent's color is red, property 4 is violated - if a node is red,
       //   its children must be all black.
       // Read the grandparent's other child (i.e. uncle)'s color.
-      let grandparent = parent.parent;
+      const grandparent = parent.parent;
+      if (grandparent == null) return this;
       const isParentRight = grandparent.right === parent;
       const uncle = isParentRight ? grandparent.left : grandparent.right;
       if (uncle != null && uncle.isRed) {
@@ -191,7 +194,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
         }
         parent.isRed = false;
         grandparent.isRed = true;
-        let greatgrandparent = grandparent.parent;
+        const greatgrandparent = grandparent.parent;
         if (!isParentRight) {
           const result = rightRotate(grandparent);
           if (greatgrandparent == null) {
@@ -211,7 +214,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
             greatgrandparent.right = result;
           }
         }
-        return;
+        return this;
       }
     }
   }
@@ -219,7 +222,7 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
   delete(key: K): boolean {
     if (this.root == null) return false;
     // Try to descend down to the target node first, then delete the node.
-    let current = this.root;
+    let current: Node<K, V> | null = this.root;
     while (true) {
       const result = this.comparator(key, current.key);
       if (result === 0) {
@@ -271,13 +274,13 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
 
     this.size -= 1;
 
-    let parent = current.parent;
+    let { parent } = current;
     let currentDir = parent != null && parent.right === current;
     const child = current.left != null ? current.left : current.right;
 
     // Child will replace the current node. If child is null, just consider it
     // black go on with it.
-    
+
     // If child or current is red, mark the replaced child as black, and we're
     // done. Since no two consecutive red node is not allowed, this will
     // effectively mean one of the node is black.
@@ -344,21 +347,19 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
               parent.isRed = false;
               parent = rightRotate(parent);
             }
+          } else if (!siblingLeftIsRed) {
+            // right right
+            if (sibling.right != null) sibling.right.isRed = sibling.isRed;
+            sibling.isRed = parent.isRed;
+            parent.isRed = false;
+            parent = leftRotate(parent);
           } else {
-            if (!siblingLeftIsRed) {
-              // right right 
-              if (sibling.right != null) sibling.right.isRed = sibling.isRed;
-              sibling.isRed = parent.isRed;
-              parent.isRed = false;
-              parent = leftRotate(parent);
-            } else {
-              // right left
-              if (sibling.left != null) sibling.left.isRed = parent.isRed;
-              sibling = rightRotate(sibling);
-              parent.right = sibling;
-              parent.isRed = false;
-              parent = leftRotate(parent);
-            }
+            // right left
+            if (sibling.left != null) sibling.left.isRed = parent.isRed;
+            sibling = rightRotate(sibling);
+            parent.right = sibling;
+            parent.isRed = false;
+            parent = leftRotate(parent);
           }
           if (grandparent == null) {
             this.root = parent;
@@ -368,18 +369,17 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
             grandparent.left = parent;
           }
           return true;
-        } else {
-          // If sibling is black and its children are black, paint sibling red,
-          // and repeat for the parent.
-          sibling.isRed = true;
-          if (parent.isRed) {
-            parent.isRed = false;
-            return true;
-          }
-          current = parent;
-          parent = current.parent;
-          currentDir = parent != null && parent.right === current;
         }
+        // If sibling is black and its children are black, paint sibling red,
+        // and repeat for the parent.
+        sibling.isRed = true;
+        if (parent.isRed) {
+          parent.isRed = false;
+          return true;
+        }
+        current = parent;
+        parent = current.parent;
+        currentDir = parent != null && parent.right === current;
       } else {
         // Sibling is red...
         const grandparent = parent.parent;
@@ -410,7 +410,6 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
         }
       }
     }
-
   }
 
   clear(): void {
@@ -418,13 +417,13 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
     this.size = 0;
   }
 
-  *entries(
+  * entries(
     start?: K,
     after?: boolean,
     reversed?: boolean,
   ): IterableIterator<[K, V]> {
     // Stack only stores reentry nodes.
-    let stack: Node<K, V>[] = [];
+    const stack: Node<K, V>[] = [];
     let skipNext = after;
     if (start !== undefined) {
       // Try to locate the target node.
@@ -454,30 +453,29 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
           current = current.left;
         }
       }
-    } else {
-      // For that reason, we need to descend down to the leftmost node.
-      if (!reversed) {
-        let current = this.root;
-        if (current != null) {
-          stack.push(current);
-          while (current.left != null) {
-            stack.push(current.left);
-            current = current.left;
-          }
+    } else if (!reversed) {
+    // For that reason, we need to descend down to the leftmost node.
+      let current = this.root;
+      if (current != null) {
+        stack.push(current);
+        while (current.left != null) {
+          stack.push(current.left);
+          current = current.left;
         }
-      } else {
-        let current = this.root;
-        if (current != null) {
-          stack.push(current);
-          while (current.right != null) {
-            stack.push(current.right);
-            current = current.right;
-          }
+      }
+    } else {
+      let current = this.root;
+      if (current != null) {
+        stack.push(current);
+        while (current.right != null) {
+          stack.push(current.right);
+          current = current.right;
         }
       }
     }
     while (stack.length > 0) {
-      let node = stack.pop();
+      const node = stack.pop();
+      if (node == null) break;
       if (!skipNext) {
         yield [node.key, node.value];
       } else {
@@ -492,46 +490,44 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
             current = current.left;
           }
         }
-      } else {
-        if (node.left != null) {
-          let current = node.left;
-          stack.push(current);
-          while (current.right != null) {
-            stack.push(current.right);
-            current = current.right;
-          }
+      } else if (node.left != null) {
+        let current = node.left;
+        stack.push(current);
+        while (current.right != null) {
+          stack.push(current.right);
+          current = current.right;
         }
       }
     }
   }
-  *keys(
+  * keys(
     start?: K,
     after?: boolean,
     reversed?: boolean,
   ): IterableIterator<K> {
-    let entries = this.entries(start, after, reversed);
+    const entries = this.entries(start, after, reversed);
     while (true) {
-      let { done, value } = entries.next();
+      const { done, value } = entries.next();
       if (done) break;
       yield value[0];
     }
   }
-  *values(
+  * values(
     start?: K,
     after?: boolean,
     reversed?: boolean,
   ): IterableIterator<V> {
-    let entries = this.entries(start, after, reversed);
+    const entries = this.entries(start, after, reversed);
     while (true) {
-      let { done, value } = entries.next();
+      const { done, value } = entries.next();
       if (done) break;
       yield value[1];
     }
   }
   forEach(callback: (value: V, key: K, map: this) => void, thisArg?: any): void {
-    let entries = this.entries();
+    const entries = this.entries();
     while (true) {
-      let { done, value } = entries.next();
+      const { done, value } = entries.next();
       if (done) break;
       callback.call(thisArg, value[1], value[0], this);
     }
@@ -542,5 +538,4 @@ export default class RedBlackSortedMap<K, V> implements SortedMap<K, V> {
   get [Symbol.toStringTag](): string {
     return 'RedBlackSortedMap';
   }
-
 }

@@ -43,8 +43,5 @@ export default class IdStore implements EngineStore {
   }
 
   unregister(): void {
-    this.engine = null;
-    this.addedSignal = null;
-    this.removedSignal = null;
   }
 }

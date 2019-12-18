@@ -185,9 +185,9 @@ export default class BitSet implements Set<number> {
       const page = this.pages[i];
       if (page == null) continue;
       const skipPage = this.skipPages[i];
-      let skipPage1Val;
-      let skipPage2Val;
-      let skipPage3Val;
+      let skipPage1Val = 0;
+      let skipPage2Val = 0;
+      let skipPage3Val = 0;
       // skip page 1: 0.125 bytes per 1 bit, wraps every 4 byte
       // skip page 2: 0.5 bytes per 1 bit, wraps every 16 byte
       // skip page 3: 2 bytes per 1 bit, wraps every 64 byte

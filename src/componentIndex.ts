@@ -8,7 +8,6 @@ export default class ComponentIndex extends BitSet implements EngineIndex {
   constructor(name: string) {
     super();
     this.name = name;
-    this.engine = null;
     this.handleAdded = this.handleAdded.bind(this);
     this.handleRemoved = this.handleRemoved.bind(this);
   }
@@ -38,6 +37,5 @@ export default class ComponentIndex extends BitSet implements EngineIndex {
     this.engine.getSignal('componentRemoved').removeListener(
       this.name, this.handleRemoved,
     );
-    this.engine = null;
   }
 }
