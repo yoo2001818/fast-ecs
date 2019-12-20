@@ -10,6 +10,7 @@ export default class Engine {
   signals: Map<string, Signal<unknown>>;
   indexes: { [key: string]: unknown };
   store: { [key: string]: unknown };
+  storeNames: string[];
   helpers: { [key: string]: unknown };
   systems: { [key: string]: unknown };
   systemList: unknown[];
@@ -39,6 +40,7 @@ export default class Engine {
 
   addStore(name: string, value: EngineStore): void {
     this.store[name] = value;
+    this.storeNames.push(name);
     value.register(this);
   }
 

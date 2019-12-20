@@ -21,4 +21,18 @@ export default class EntityHelper implements EngineHelper {
     }
     return newId;
   }
+  getEntity(id: number): { [key: string]: unknown } {
+    const result: { [key: string]: unknown } = {};
+    result.id = id;
+    for (const key of this.engine.storeNames) {
+      const store = this.engine.getStore(key);
+      if (store instanceof ComponentStore) {
+        const value = store.get(id);
+        if (value !== undefined) {
+          result[key] = value;
+        }
+      }
+    }
+    return result;
+  }
 }
