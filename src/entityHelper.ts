@@ -35,4 +35,8 @@ export default class EntityHelper implements EngineHelper {
     }
     return result;
   }
+  deleteEntity(id: number): void {
+    const idStore = this.engine.getStore<IdStore>('id');
+    idStore.set(id, false);
+  }
 }
