@@ -19,6 +19,7 @@ export default class Engine {
     this.signals = new Map();
     this.indexes = {};
     this.store = {};
+    this.storeNames = [];
     this.helpers = {};
     this.systems = {};
     this.systemList = [];
@@ -45,7 +46,7 @@ export default class Engine {
   }
 
   addHelper(name: string, value: EngineHelper): void {
-    this.store[name] = value;
+    this.helpers[name] = value;
     value.register(this);
   }
 
