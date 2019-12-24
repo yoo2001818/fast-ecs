@@ -10,11 +10,18 @@ export interface EngineStore {
   unregister(engine: Engine): void,
 }
 
+export interface ComponentStore<T> extends EngineStore {
+  get(id: number): T | undefined,
+  set(id: number, value: T): void,
+  delete(id: number): void,
+}
+
 export interface EngineHelper {
   register(engine: Engine): void,
   unregister(engine: Engine): void,
 }
 
 export interface EngineSystem {
-  (): void,
+  register(engine: Engine): void,
+  unregister(engine: Engine): void,
 }

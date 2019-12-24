@@ -1,9 +1,9 @@
 import Engine from './engine';
-import { EngineStore } from './type';
+import { ComponentStore } from './type';
 import Signal from './signal';
 import BitSet from './bitSet';
 
-export default class IdStore implements EngineStore {
+export default class IdStore implements ComponentStore<boolean> {
   bitSet: BitSet;
   maxId: number = 0;
   engine: Engine;
@@ -20,6 +20,14 @@ export default class IdStore implements EngineStore {
     this.maxId += 1;
     this.set(newId, true);
     return newId;
+  }
+
+  get(id: number): boolean {
+    return this.bitSet.get(id);
+  }
+
+  delete(id: number): void {
+    this.set(id, false);
   }
 
   set(id: number, value: boolean): void {

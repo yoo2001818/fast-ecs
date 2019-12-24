@@ -3,6 +3,7 @@ import {
   EngineStore,
   EngineSystem,
   EngineHelper,
+  ComponentStore,
 } from './type';
 import Signal from './signal';
 
@@ -11,6 +12,8 @@ export default class Engine {
   indexes: { [key: string]: unknown };
   store: { [key: string]: unknown };
   storeNames: string[];
+  componentStores: { [key: string]: unknown };
+  componentStoreNames: string[];
   helpers: { [key: string]: unknown };
   systems: { [key: string]: unknown };
   systemList: unknown[];
@@ -20,6 +23,8 @@ export default class Engine {
     this.indexes = {};
     this.store = {};
     this.storeNames = [];
+    this.componentStores = {};
+    this.componentStoreNames = [];
     this.helpers = {};
     this.systems = {};
     this.systemList = [];
@@ -45,15 +50,21 @@ export default class Engine {
     value.register(this);
   }
 
+  addComponentStore(name: string, value: ComponentStore<unknown>): void {
+    this.componentStores[name] = value;
+    this.componentStoreNames.push(name);
+    this.addStore(name, value);
+  }
+
   addHelper(name: string, value: EngineHelper): void {
     this.helpers[name] = value;
     value.register(this);
   }
 
-  addSystem(name: string, init: (engine: Engine) => EngineSystem): void {
-    const system = init(this);
-    this.systems[name] = system;
-    this.systemList.push(system);
+  addSystem(name: string, value: EngineSystem): void {
+    this.systems[name] = value;
+    this.systemList.push(value);
+    value.register(this);
   }
 
   getIndex<T>(name: string): T {
@@ -62,6 +73,10 @@ export default class Engine {
 
   getStore<T>(name: string): T {
     return this.store[name] as T;
+  }
+
+  getComponentStore<T = ComponentStore<unknown>>(name: string): T {
+    return this.componentStores[name] as T;
   }
 
   getHelper<T>(name: string): T {
@@ -73,6 +88,6 @@ export default class Engine {
   }
 
   update(): void {
-    this.systemList.forEach((v) => (v as EngineSystem)());
+    this.getSignal('update').emit(null, null);
   }
 }

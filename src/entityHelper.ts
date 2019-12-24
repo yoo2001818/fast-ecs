@@ -1,7 +1,6 @@
 import { EngineHelper } from './type';
 import Engine from './engine';
 import IdStore from './idStore';
-import ComponentStore from './componentStore';
 
 export default class EntityHelper implements EngineHelper {
   engine: Engine;
@@ -11,11 +10,11 @@ export default class EntityHelper implements EngineHelper {
   unregister(): void {
   }
   createEntity(entity: { [key: string]: unknown }): number {
-    const idStore = this.engine.getStore<IdStore>('id');
+    const idStore = this.engine.getComponentStore<IdStore>('id');
     const newId = idStore.create();
     for (const key in entity) {
       if (Object.hasOwnProperty.call(entity, key)) {
-        const store = this.engine.getStore<ComponentStore<unknown>>(key);
+        const store = this.engine.getComponentStore(key);
         store.set(newId, entity[key]);
       }
     }
@@ -24,19 +23,19 @@ export default class EntityHelper implements EngineHelper {
   getEntity(id: number): { [key: string]: unknown } {
     const result: { [key: string]: unknown } = {};
     result.id = id;
-    for (const key of this.engine.storeNames) {
-      const store = this.engine.getStore(key);
-      if (store instanceof ComponentStore) {
-        const value = store.get(id);
-        if (value !== undefined) {
-          result[key] = value;
-        }
+    for (const key of this.engine.componentStoreNames) {
+      const store = this.engine.getComponentStore(key);
+      const value = store.get(id);
+      if (value !== undefined) {
+        result[key] = value;
       }
     }
     return result;
   }
   deleteEntity(id: number): void {
-    const idStore = this.engine.getStore<IdStore>('id');
-    idStore.set(id, false);
+    for (const key of this.engine.componentStoreNames) {
+      const store = this.engine.getComponentStore(key);
+      store.delete(id);
+    }
   }
 }

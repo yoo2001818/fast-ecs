@@ -1,9 +1,9 @@
 import RedBlackSortedMap from './sortedMap/rb';
-import { EngineStore } from './type';
+import { ComponentStore } from './type';
 import Engine from './engine';
 import Signal from './signal';
 
-export default class ComponentStore<T> implements EngineStore {
+export default class RBComponentStore<T> implements ComponentStore<T> {
   name: string;
   sortedMap: RedBlackSortedMap<number, T>;
   engine: Engine;

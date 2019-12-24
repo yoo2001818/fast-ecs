@@ -1,4 +1,4 @@
-export type SignalListener<T> = (key: string, value: T) => void;
+export type SignalListener<T> = (key: string | null, value: T) => void;
 
 export default class Signal<T> {
   keyListeners: { [key: string]: Set<SignalListener<T>> };
@@ -25,11 +25,13 @@ export default class Signal<T> {
     }
   }
 
-  emit(key: string, value: T): void {
+  emit(key: string | null, value: T): void {
     this.listeners.forEach((v) => v(key, value));
-    const keyListeners = this.keyListeners[key];
-    if (keyListeners != null) {
-      keyListeners.forEach((v) => v(key, value));
+    if (key != null) {
+      const keyListeners = this.keyListeners[key];
+      if (keyListeners != null) {
+        keyListeners.forEach((v) => v(key, value));
+      }
     }
   }
 }
