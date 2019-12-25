@@ -89,5 +89,6 @@ export default class Engine {
 
   update(): void {
     this.getSignal('update').emit(null, null);
+    this.getSignal('afterUpdate').emit(null, null);
   }
 }

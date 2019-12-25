@@ -9,6 +9,7 @@ export default class RBComponentStore<T> implements ComponentStore<T> {
   engine: Engine;
   addedSignal: Signal<number>;
   removedSignal: Signal<number>;
+  changedSignal: Signal<number>;
   constructor(name: string) {
     this.sortedMap = new RedBlackSortedMap((a, b) => a - b);
     this.name = name;
@@ -19,8 +20,13 @@ export default class RBComponentStore<T> implements ComponentStore<T> {
   }
 
   set(id: number, value: T): void {
+    const hadEntry = this.sortedMap.has(id);
     this.sortedMap.set(id, value);
-    this.addedSignal.emit(this.name, id);
+    if (hadEntry) {
+      this.changedSignal.emit(this.name, id);
+    } else {
+      this.addedSignal.emit(this.name, id);
+    }
   }
 
   delete(id: number): void {
@@ -32,6 +38,7 @@ export default class RBComponentStore<T> implements ComponentStore<T> {
     this.engine = engine;
     this.addedSignal = engine.getSignal<number>('componentAdded');
     this.removedSignal = engine.getSignal<number>('componentRemoved');
+    this.changedSignal = engine.getSignal<number>('componentChanged');
   }
 
   unregister(): void {
