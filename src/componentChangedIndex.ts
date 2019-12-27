@@ -74,6 +74,14 @@ export default class ComponentChangedIndex implements EngineIndex {
     return iter;
   }
 
+  forEach(
+    callbackfn: (id: number, flag: number) => void,
+  ): void {
+    for (const [key, value] of this.entries()) {
+      callbackfn(key, value);
+    }
+  }
+
   handleAdded(name: string, id: number): void {
     this.added.set(id, true);
   }
