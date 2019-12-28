@@ -16,3 +16,26 @@ const entityId = engine.getHelper<EntityHelper>('entity').createEntity({
 });
 console.log(engine.getHelper<EntityHelper>('entity').getEntity(entityId));
 console.log(engine.getIndex<ComponentIndex>('position'));
+
+engine.addSystem('move', {
+  register(engine) {
+    const positionIndex = engine.getIndex<ComponentIndex>('position');
+    const positionStore = engine.getComponentStore('position');
+    engine.getSignal('update').addListener(null, () => {
+      positionIndex.forEach((id) => {
+        const pos = positionStore.get(id) as any;
+        positionStore.set(id, { x: pos.x + 1, y: pos.y + 1 });
+      });
+    });
+  },
+  unregister() {
+
+  },
+});
+
+engine.update();
+engine.update();
+engine.update();
+engine.update();
+
+console.log(engine.getHelper<EntityHelper>('entity').getEntity(entityId));
